@@ -1,10 +1,9 @@
-
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore, Question } from '@/store/gameStore';
 import { 
   Plus, X, Save, Edit, Trash, Upload, Download, 
-  RotateCcw, Check, FileText 
+  RotateCcw, Check, FileText, RefreshCw
 } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 
@@ -35,7 +34,8 @@ const Admin: React.FC = () => {
     uploadQuestions,
     resetQuestions,
     addTeam,
-    removeTeam
+    removeTeam,
+    resetGame
   } = useGameStore();
 
   const handleLogin = () => {
@@ -162,6 +162,11 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleStartNewGame = () => {
+    resetGame();
+    playSound('buttonClick');
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 p-4">
@@ -212,6 +217,13 @@ const Admin: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-800">Admin Panel</h1>
             <div className="flex gap-4">
+              <button
+                onClick={handleStartNewGame}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"
+              >
+                <RefreshCw size={20} />
+                Start New Game
+              </button>
               <button
                 onClick={() => window.open('/host', '_blank')}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors"

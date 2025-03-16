@@ -21,22 +21,21 @@ const Player: React.FC = () => {
     };
   }, []);
 
-  // Apply a non-interactive overlay to the entire page
-  const playerOverlayStyle: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
-    pointerEvents: 'all', // Catches all pointer events
-    cursor: 'default'
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 p-4">
       {/* Non-interactive overlay that blocks all interactions */}
-      <div style={playerOverlayStyle}></div>
+      <div 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 10,
+          pointerEvents: 'all', // Catches all pointer events
+          cursor: 'default'
+        }}
+      ></div>
       
       <div className="max-w-7xl mx-auto" style={{ position: 'relative', zIndex: 5 }}>
         <div className="flex justify-between items-center mb-6">

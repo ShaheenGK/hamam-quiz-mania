@@ -49,7 +49,6 @@ const Notification: React.FC = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => hideNotification()} />
           <motion.div
             className={`max-w-2xl w-full m-4 rounded-xl shadow-2xl ${getBgColor()} p-8`}
             initial={{ scale: 0.9 }}
