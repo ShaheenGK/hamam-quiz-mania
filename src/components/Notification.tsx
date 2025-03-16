@@ -11,7 +11,7 @@ const Notification: React.FC = () => {
     if (notification.visible) {
       const timer = setTimeout(() => {
         hideNotification();
-      }, 3000);
+      }, 5000); // Changed to 5 seconds
       
       return () => clearTimeout(timer);
     }
@@ -20,11 +20,11 @@ const Notification: React.FC = () => {
   const getIcon = () => {
     switch (notification.type) {
       case 'success':
-        return <CheckCircle className="h-6 w-6 text-green-500" />;
+        return <CheckCircle className="h-12 w-12 text-green-500" />;
       case 'error':
-        return <XCircle className="h-6 w-6 text-red-500" />;
+        return <XCircle className="h-12 w-12 text-red-500" />;
       default:
-        return <Info className="h-6 w-6 text-blue-500" />;
+        return <Info className="h-12 w-12 text-blue-500" />;
     }
   };
   
@@ -43,18 +43,24 @@ const Notification: React.FC = () => {
     <AnimatePresence>
       {notification.visible && (
         <motion.div
-          className="notification glass fixed z-50 min-w-[300px] max-w-md"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
+          className="notification fixed z-50 inset-0 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className={`rounded-lg shadow-lg p-4 border ${getBgColor()}`}>
-            <div className="flex items-center">
+          <div className="absolute inset-0 bg-black bg-opacity-30" onClick={() => hideNotification()} />
+          <motion.div
+            className={`max-w-2xl w-full m-4 rounded-xl shadow-2xl ${getBgColor()} p-8`}
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.9 }}
+          >
+            <div className="flex flex-col items-center text-center">
               {getIcon()}
-              <span className="ml-3 text-lg font-medium">{notification.message}</span>
+              <h3 className="mt-4 text-2xl font-bold">{notification.message}</h3>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>

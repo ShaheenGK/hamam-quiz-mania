@@ -22,7 +22,7 @@ const TeamDisplay: React.FC = () => {
           className={`
             flex flex-col items-center justify-center 
             p-4 bg-white rounded-lg shadow-md
-            ${index === currentTeamIndex ? 'active-team' : ''}
+            ${index === currentTeamIndex ? 'border-2 border-blue-500' : ''}
           `}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -53,9 +53,6 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ id, index }) => {
     >
       <div className="bg-white rounded-lg neo-shadow h-full flex flex-col justify-center items-center p-4">
         <span className="text-3xl font-bold text-gray-800">{index + 1}</span>
-        {!isCompleted && (
-          <div className="mt-2 font-medium text-gray-600">{question.points} pts</div>
-        )}
         {isCompleted && (
           <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center">
             <span className="text-lg font-bold text-gray-500">Completed</span>

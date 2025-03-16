@@ -17,7 +17,8 @@ const QuestionView: React.FC = () => {
     selectAnswer,
     teams,
     currentTeamIndex,
-    updateTeamPoints
+    updateTeamPoints,
+    showNotification
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -41,11 +42,22 @@ const QuestionView: React.FC = () => {
   
   const handleRevealAnswer = () => {
     showAnswer();
+    
     if (selectedAnswerIndex !== null) {
       if (selectedAnswerIndex === question.correctAnswerIndex) {
         playSound('correctAnswer');
+        
+        // Show custom reward if configured
+        if (question.usedCustomReward && question.customReward) {
+          showNotification(`Prize: ${question.customReward}`, 'success');
+        }
       } else {
         playSound('wrongAnswer');
+        
+        // Show custom penalty if configured
+        if (question.usedCustomReward && question.customPenalty) {
+          showNotification(`Penalty: ${question.customPenalty}`, 'error');
+        }
       }
     }
   };
@@ -61,19 +73,11 @@ const QuestionView: React.FC = () => {
       
       if (selectedAnswerIndex === question.correctAnswerIndex) {
         // Award points for correct answer
-        if (question.usedCustomReward && question.customReward) {
-          // Show custom reward notification
-          // This will be displayed through the notification system in the store
-        } else {
+        if (!question.usedCustomReward) {
           updateTeamPoints(currentTeam.id, question.points);
         }
       } else if (selectedAnswerIndex !== null) {
-        // Penalty for wrong answer
-        if (question.usedCustomReward && question.customPenalty) {
-          // Show custom penalty notification
-        } else {
-          // No point deduction by default
-        }
+        // No point deduction by default for wrong answers
       }
     }
     
@@ -106,22 +110,22 @@ const QuestionView: React.FC = () => {
         <Timer />
         
         {/* Answer Grid */}
-        <div className="answers-grid flex-grow mb-6">
+        <div className="answers-grid grid grid-cols-2 gap-4 flex-grow mb-6">
           {question.answers.map((answer, index) => (
             <motion.button
               key={index}
               onClick={() => handleAnswerSelect(index)}
               className={`
-                w-full h-full p-4 flex items-center justify-center
+                w-full p-4 flex items-center justify-center
                 rounded-lg text-lg font-medium transition-all
                 ${revealAnswer ? (
                   index === question.correctAnswerIndex 
-                    ? 'correct-answer' 
-                    : 'incorrect-answer'
+                    ? 'correct-answer bg-green-100 text-green-800 border-2 border-green-500' 
+                    : 'incorrect-answer bg-red-100 text-red-800 border-2 border-red-500'
                 ) : (
                   selectedAnswerIndex === index 
-                    ? 'selected-answer bg-gray-100' 
-                    : 'bg-white hover:bg-gray-50'
+                    ? 'selected-answer bg-gray-100 border-2 border-orange-400' 
+                    : 'bg-white hover:bg-gray-50 border-2 border-transparent'
                 )}
                 ${revealAnswer && 'cursor-default'}
               `}
