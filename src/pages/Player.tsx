@@ -52,7 +52,7 @@ const Player: React.FC = () => {
           {activeView === 'grid' ? (
             <QuestionGrid />
           ) : (
-            <QuestionView />
+            <QuestionView isPlayerView={true} />
           )}
         </div>
         

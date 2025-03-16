@@ -6,7 +6,11 @@ import Timer from './Timer';
 import { X } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 
-const QuestionView: React.FC = () => {
+interface QuestionViewProps {
+  isPlayerView?: boolean;
+}
+
+const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => {
   const { 
     questions, 
     selectedQuestionId,
@@ -46,18 +50,8 @@ const QuestionView: React.FC = () => {
     if (selectedAnswerIndex !== null) {
       if (selectedAnswerIndex === question.correctAnswerIndex) {
         playSound('correctAnswer');
-        
-        // Show custom reward if configured
-        if (question.usedCustomReward && question.customReward) {
-          showNotification(`Prize: ${question.customReward}`, 'success');
-        }
       } else {
         playSound('wrongAnswer');
-        
-        // Show custom penalty if configured
-        if (question.usedCustomReward && question.customPenalty) {
-          showNotification(`Penalty: ${question.customPenalty}`, 'error');
-        }
       }
     }
   };
@@ -75,9 +69,13 @@ const QuestionView: React.FC = () => {
         // Award points for correct answer
         if (!question.usedCustomReward) {
           updateTeamPoints(currentTeam.id, question.points);
+        } else if (question.customReward) {
+          // Show the reward notification
+          showNotification(`Prize: ${question.customReward}`, 'success');
         }
-      } else if (selectedAnswerIndex !== null) {
-        // No point deduction by default for wrong answers
+      } else if (selectedAnswerIndex !== null && question.usedCustomReward && question.customPenalty) {
+        // Show the penalty notification
+        showNotification(`Penalty: ${question.customPenalty}`, 'error');
       }
     }
     
@@ -98,12 +96,14 @@ const QuestionView: React.FC = () => {
         {/* Header with question and close button */}
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
-          <button 
-            onClick={handleClose}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X size={24} className="text-gray-600" />
-          </button>
+          {!isPlayerView && (
+            <button 
+              onClick={handleClose}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={24} className="text-gray-600" />
+            </button>
+          )}
         </div>
         
         {/* Timer */}
@@ -138,40 +138,41 @@ const QuestionView: React.FC = () => {
           ))}
         </div>
         
-        {/* Control buttons */}
-        <div className="flex justify-between items-center mt-auto">
-          <div className="text-lg font-bold">
-            {!question.usedCustomReward && `${question.points} points`}
-            {question.usedCustomReward && question.customReward && `Prize: ${question.customReward}`}
-          </div>
-          
-          <div className="flex gap-4">
-            {!revealAnswer && (
-              <motion.button
-                onClick={handleRevealAnswer}
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Reveal Answer
-              </motion.button>
-            )}
+        {/* Control buttons - Only show for host view */}
+        {!isPlayerView && (
+          <div className="flex justify-between items-center mt-auto">
+            <div className="text-lg font-bold">
+              {!question.usedCustomReward && `${question.points} points`}
+            </div>
             
-            {showPointsControls && teams.length > 0 && (
-              <motion.button
-                onClick={handleAwardPoints}
-                className="px-6 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                Award Points
-              </motion.button>
-            )}
+            <div className="flex gap-4">
+              {!revealAnswer && (
+                <motion.button
+                  onClick={handleRevealAnswer}
+                  className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Reveal Answer
+                </motion.button>
+              )}
+              
+              {showPointsControls && teams.length > 0 && (
+                <motion.button
+                  onClick={handleAwardPoints}
+                  className="px-6 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  Award Points
+                </motion.button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </motion.div>
     </AnimatePresence>
   );

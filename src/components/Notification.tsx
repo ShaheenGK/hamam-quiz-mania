@@ -11,7 +11,7 @@ const Notification: React.FC = () => {
     if (notification.visible) {
       const timer = setTimeout(() => {
         hideNotification();
-      }, 5000); // Changed to 5 seconds
+      }, 5000); // 5 seconds display time
       
       return () => clearTimeout(timer);
     }
@@ -20,11 +20,11 @@ const Notification: React.FC = () => {
   const getIcon = () => {
     switch (notification.type) {
       case 'success':
-        return <CheckCircle className="h-12 w-12 text-green-500" />;
+        return <CheckCircle className="h-16 w-16 text-green-500" />;
       case 'error':
-        return <XCircle className="h-12 w-12 text-red-500" />;
+        return <XCircle className="h-16 w-16 text-red-500" />;
       default:
-        return <Info className="h-12 w-12 text-blue-500" />;
+        return <Info className="h-16 w-16 text-blue-500" />;
     }
   };
   
@@ -49,7 +49,7 @@ const Notification: React.FC = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="absolute inset-0 bg-black bg-opacity-30" onClick={() => hideNotification()} />
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => hideNotification()} />
           <motion.div
             className={`max-w-2xl w-full m-4 rounded-xl shadow-2xl ${getBgColor()} p-8`}
             initial={{ scale: 0.9 }}
@@ -58,7 +58,7 @@ const Notification: React.FC = () => {
           >
             <div className="flex flex-col items-center text-center">
               {getIcon()}
-              <h3 className="mt-4 text-2xl font-bold">{notification.message}</h3>
+              <h3 className="mt-4 text-3xl font-bold mb-2">{notification.message}</h3>
             </div>
           </motion.div>
         </motion.div>
