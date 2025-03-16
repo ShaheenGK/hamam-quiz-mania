@@ -72,6 +72,8 @@ export type GameActions = {
   markQuestionCompleted: (id: number) => void;
   
   resetGame: () => void;
+  
+  setTeams: (teams: Team[]) => void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -101,6 +103,17 @@ export const useGameStore = create<GameStore>()(
         visible: false,
         message: '',
         type: 'info',
+      },
+      
+      setTeams: (teams) => {
+        set({ teams });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_TEAMS',
+            payload: { teams }
+          });
+        }
       },
       
       setQuestions: (questions) => {
@@ -146,19 +159,25 @@ export const useGameStore = create<GameStore>()(
           ? Math.max(...teams.map(t => t.id)) + 1 
           : 1;
         
-        set({
-          teams: [...teams, { id: newId, name, points: 0 }]
-        });
+        const newTeams = [...teams, { id: newId, name, points: 0 }];
+        set({ teams: newTeams });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_TEAMS',
+            payload: { teams: newTeams }
+          });
+        }
       },
       
       updateTeamPoints: (teamId, points) => {
-        set({
-          teams: get().teams.map(t => 
-            t.id === teamId ? { ...t, points: t.points + points } : t
-          )
-        });
+        const updatedTeams = get().teams.map(t => 
+          t.id === teamId ? { ...t, points: t.points + points } : t
+        );
         
-        const team = get().teams.find(t => t.id === teamId);
+        set({ teams: updatedTeams });
+        
+        const team = updatedTeams.find(t => t.id === teamId);
         if (team) {
           if (points > 0) {
             get().showNotification(`${team.name} earned ${points} points!`, 'success');
@@ -169,24 +188,38 @@ export const useGameStore = create<GameStore>()(
         
         if (broadcastChannel) {
           broadcastChannel.postMessage({
-            type: 'UPDATE_TEAM_POINTS',
-            payload: { teamId, points }
+            type: 'SET_TEAMS',
+            payload: { teams: updatedTeams }
           });
         }
       },
       
       removeTeam: (teamId) => {
-        const teams = get().teams.filter(t => t.id !== teamId);
+        const updatedTeams = get().teams.filter(t => t.id !== teamId);
         set({
-          teams,
-          currentTeamIndex: get().currentTeamIndex >= teams.length 
+          teams: updatedTeams,
+          currentTeamIndex: get().currentTeamIndex >= updatedTeams.length 
             ? 0 
             : get().currentTeamIndex
         });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_TEAMS',
+            payload: { teams: updatedTeams }
+          });
+        }
       },
       
       setCurrentTeam: (index) => {
         set({ currentTeamIndex: index });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_CURRENT_TEAM',
+            payload: { index }
+          });
+        }
       },
       
       nextTeam: () => {
@@ -195,6 +228,13 @@ export const useGameStore = create<GameStore>()(
         
         const nextIndex = (currentTeamIndex + 1) % teams.length;
         set({ currentTeamIndex: nextIndex });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_CURRENT_TEAM',
+            payload: { index: nextIndex }
+          });
+        }
       },
       
       selectQuestion: (id) => {
@@ -339,7 +379,7 @@ export const useGameStore = create<GameStore>()(
         
         setTimeout(() => {
           get().hideNotification();
-        }, 3000);
+        }, 5000);
         
         if (broadcastChannel) {
           broadcastChannel.postMessage({
@@ -367,13 +407,23 @@ export const useGameStore = create<GameStore>()(
       
       markQuestionCompleted: (id) => {
         if (!get().completedQuestions.includes(id)) {
+          const updatedCompleted = [...get().completedQuestions, id];
           set({
-            completedQuestions: [...get().completedQuestions, id]
+            completedQuestions: updatedCompleted
           });
+          
+          if (broadcastChannel) {
+            broadcastChannel.postMessage({
+              type: 'SET_COMPLETED_QUESTIONS',
+              payload: { completedQuestions: updatedCompleted }
+            });
+          }
         }
       },
       
       resetGame: () => {
+        const updatedTeams = get().teams.map(team => ({ ...team, points: 0 }));
+        
         set({
           completedQuestions: [],
           currentTeamIndex: 0,
@@ -383,13 +433,13 @@ export const useGameStore = create<GameStore>()(
           activeView: 'grid',
           isTimerRunning: false,
           remainingTime: 0,
-          teams: get().teams.map(team => ({ ...team, points: 0 }))
+          teams: updatedTeams
         });
         
         if (broadcastChannel) {
           broadcastChannel.postMessage({
             type: 'RESET_GAME',
-            payload: {}
+            payload: { teams: updatedTeams }
           });
         }
       }
@@ -400,6 +450,7 @@ export const useGameStore = create<GameStore>()(
         questions: state.questions,
         teams: state.teams,
         completedQuestions: state.completedQuestions,
+        currentTeamIndex: state.currentTeamIndex,
       }),
     }
   )
@@ -412,8 +463,26 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
     const { type, payload } = event.data;
     const store = useGameStore.getState();
     
-    if (role === 'player') {
+    if (role === 'player' || role === 'admin' || role === 'host') {
       switch (type) {
+        case 'SET_TEAMS':
+          store.setTeams(payload.teams);
+          break;
+          
+        case 'SET_CURRENT_TEAM':
+          store.setCurrentTeam(payload.index);
+          break;
+          
+        case 'SET_COMPLETED_QUESTIONS':
+          if (payload.completedQuestions) {
+            store.setQuestions(store.questions.map(q => 
+              payload.completedQuestions.includes(q.id) 
+                ? { ...q, completed: true } 
+                : q
+            ));
+          }
+          break;
+          
         case 'SELECT_QUESTION':
           store.selectQuestion(payload.questionId);
           break;
@@ -450,19 +519,10 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
           store.hideNotification();
           break;
         
-        case 'UPDATE_TEAM_POINTS':
-          store.teams.forEach(team => {
-            if (team.id === payload.teamId) {
-              set({
-                teams: store.teams.map(t => 
-                  t.id === payload.teamId ? { ...t, points: t.points + payload.points } : t
-                )
-              });
-            }
-          });
-          break;
-        
         case 'RESET_GAME':
+          if (payload.teams) {
+            store.setTeams(payload.teams);
+          }
           store.resetGame();
           break;
       }
