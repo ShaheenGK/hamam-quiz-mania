@@ -31,10 +31,25 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
   useEffect(() => {
     if (revealAnswer) {
       setShowPointsControls(true);
+      
+      // Auto-award points for player view when they get the correct answer
+      if (isPlayerView && selectedAnswerIndex === question?.correctAnswerIndex && teams.length > 0 && currentTeamIndex < teams.length) {
+        const currentTeam = teams[currentTeamIndex];
+        
+        if (!question.usedCustomReward) {
+          updateTeamPoints(currentTeam.id, question.points);
+        } else if (question.customReward) {
+          showNotification(`Prize: ${question.customReward}`, 'success');
+        }
+      } else if (isPlayerView && selectedAnswerIndex !== null && 
+                selectedAnswer !== question?.correctAnswerIndex && 
+                question?.usedCustomReward && question?.customPenalty) {
+        showNotification(`Penalty: ${question.customPenalty}`, 'error');
+      }
     } else {
       setShowPointsControls(false);
     }
-  }, [revealAnswer]);
+  }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
   
   if (!question) return null;
   
@@ -116,16 +131,16 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
               key={index}
               onClick={() => handleAnswerSelect(index)}
               className={`
-                w-full p-4 flex items-center justify-center
+                answer-button w-full p-4 flex items-center justify-center
                 rounded-lg text-lg font-medium transition-all
                 ${revealAnswer ? (
                   index === question.correctAnswerIndex 
-                    ? 'correct-answer bg-green-100 text-green-800 border-2 border-green-500' 
-                    : 'incorrect-answer bg-red-100 text-red-800 border-2 border-red-500'
+                    ? 'correct-answer bg-green-100 text-green-800' 
+                    : 'incorrect-answer bg-red-100 text-red-800'
                 ) : (
                   selectedAnswerIndex === index 
-                    ? 'selected-answer bg-gray-100 border-2 border-orange-400' 
-                    : 'bg-white hover:bg-gray-50 border-2 border-transparent'
+                    ? 'selected-answer bg-gray-100' 
+                    : 'bg-white hover:bg-gray-50'
                 )}
                 ${revealAnswer && 'cursor-default'}
               `}

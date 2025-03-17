@@ -21,6 +21,23 @@ export type Team = {
   points: number;
 };
 
+export type Sound = {
+  id: string;
+  name: string;
+  url: string;
+  isCustom: boolean;
+};
+
+export type QuizColors = {
+  correct: string;
+  incorrect: string;
+  selected: string;
+  timerStart: string;
+  timerMid: string;
+  timerEnd: string;
+  activeTeam: string;
+};
+
 export type GameState = {
   questions: Question[];
   teams: Team[];
@@ -38,6 +55,8 @@ export type GameState = {
     message: string;
     type: 'success' | 'error' | 'info';
   };
+  quizColors: QuizColors;
+  sounds: Sound[];
 };
 
 export type GameActions = {
@@ -74,9 +93,52 @@ export type GameActions = {
   resetGame: () => void;
   
   setTeams: (teams: Team[]) => void;
+  
+  setCustomColors: (colors: Partial<QuizColors>) => void;
+  resetColors: () => void;
+  
+  addCustomSound: (name: string, url: string) => void;
+  removeSound: (id: string) => void;
 };
 
 export type GameStore = GameState & GameActions;
+
+const defaultSounds: Sound[] = [
+  {
+    id: 'correctAnswer',
+    name: 'Correct Answer',
+    url: '/sounds/correct.mp3',
+    isCustom: false
+  },
+  {
+    id: 'wrongAnswer',
+    name: 'Wrong Answer',
+    url: '/sounds/wrong.mp3',
+    isCustom: false
+  },
+  {
+    id: 'buttonClick',
+    name: 'Button Click',
+    url: '/sounds/click.mp3',
+    isCustom: false
+  },
+  {
+    id: 'timerEnd',
+    name: 'Timer End',
+    url: '/sounds/timer.mp3',
+    isCustom: false
+  }
+];
+
+const defaultColors: QuizColors = {
+  correct: '#10B981',
+  incorrect: '#EF4444',
+  selected: '#FFA500',
+  timerStart: '#3B82F6',
+  timerMid: '#F97316',
+  timerEnd: '#EF4444',
+  activeTeam: '#3B82F6'
+};
 
 let broadcastChannel: BroadcastChannel | null = null;
 try {
@@ -103,6 +165,71 @@ export const useGameStore = create<GameStore>()(
         visible: false,
         message: '',
         type: 'info',
+      },
+      quizColors: defaultColors,
+      sounds: defaultSounds,
+      
+      setCustomColors: (colors) => {
+        const updatedColors = { ...get().quizColors, ...colors };
+        set({ quizColors: updatedColors });
+        
+        Object.entries(updatedColors).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--quiz-${key}`, value);
+        });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_COLORS',
+            payload: { colors: updatedColors }
+          });
+        }
+      },
+      
+      resetColors: () => {
+        set({ quizColors: defaultColors });
+        
+        Object.entries(defaultColors).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--quiz-${key}`, value);
+        });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_COLORS',
+            payload: { colors: defaultColors }
+          });
+        }
+      },
+      
+      addCustomSound: (name, url) => {
+        const newSound: Sound = {
+          id: `custom-${Date.now()}`,
+          name,
+          url,
+          isCustom: true
+        };
+        
+        set({ sounds: [...get().sounds, newSound] });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'ADD_SOUND',
+            payload: { sound: newSound }
+          });
+        }
+      },
+      
+      removeSound: (id) => {
+        const sound = get().sounds.find(s => s.id === id);
+        if (sound?.isCustom) {
+          set({ sounds: get().sounds.filter(s => s.id !== id) });
+          
+          if (broadcastChannel) {
+            broadcastChannel.postMessage({
+              type: 'REMOVE_SOUND',
+              payload: { soundId: id }
+            });
+          }
+        }
       },
       
       setTeams: (teams) => {
@@ -451,6 +578,8 @@ export const useGameStore = create<GameStore>()(
         teams: state.teams,
         completedQuestions: state.completedQuestions,
         currentTeamIndex: state.currentTeamIndex,
+        quizColors: state.quizColors,
+        sounds: state.sounds,
       }),
     }
   )
@@ -525,9 +654,42 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
           }
           store.resetGame();
           break;
+          
+        case 'SET_COLORS':
+          if (payload.colors) {
+            store.setCustomColors(payload.colors);
+          }
+          break;
+          
+        case 'ADD_SOUND':
+          if (payload.sound) {
+            const sounds = [...store.sounds];
+            if (!sounds.some(s => s.id === payload.sound.id)) {
+              sounds.push(payload.sound);
+              set({ sounds });
+            }
+          }
+          break;
+          
+        case 'REMOVE_SOUND':
+          if (payload.soundId) {
+            const sounds = store.sounds.filter(s => s.id !== payload.soundId);
+            set({ sounds });
+          }
+          break;
       }
     }
   };
+};
+
+export const playSound = (soundId: string) => {
+  const store = useGameStore.getState();
+  const sound = store.sounds.find(s => s.id === soundId);
+  
+  if (sound) {
+    const audio = new Audio(sound.url);
+    audio.play();
+  }
 };
 
 let timerInterval: number | null = null;
