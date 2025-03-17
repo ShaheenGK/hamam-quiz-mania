@@ -1,10 +1,11 @@
 
 import React, { useState, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { Play, Pause, Upload, X, Volume2, Save } from 'lucide-react';
+import { Play, Pause, Upload, X, Volume2, Save, Edit } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const SoundCustomizer: React.FC = () => {
   const { sounds, addCustomSound, removeSound } = useGameStore();
@@ -13,6 +14,7 @@ const SoundCustomizer: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newSoundName, setNewSoundName] = useState('');
+  const [editingSoundId, setEditingSoundId] = useState<string | null>(null);
 
   const handlePlaySound = (soundId: string) => {
     if (playingSound === soundId) {
@@ -56,7 +58,15 @@ const SoundCustomizer: React.FC = () => {
     reader.onload = (e) => {
       const result = e.target?.result;
       if (typeof result === 'string') {
-        addCustomSound(newSoundName, result);
+        if (editingSoundId) {
+          // First remove old sound
+          removeSound(editingSoundId);
+          // Then add new one with same ID
+          addCustomSound(newSoundName, result, editingSoundId);
+          setEditingSoundId(null);
+        } else {
+          addCustomSound(newSoundName, result);
+        }
         setNewSoundName('');
       }
     };
@@ -65,6 +75,14 @@ const SoundCustomizer: React.FC = () => {
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleEditSound = (sound: { id: string; name: string }) => {
+    setEditingSoundId(sound.id);
+    setNewSoundName(sound.name);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -90,7 +108,7 @@ const SoundCustomizer: React.FC = () => {
       </div>
       
       <div className="mb-6">
-        <h3 className="text-md font-medium mb-2">Add New Sound</h3>
+        <h3 className="text-md font-medium mb-2">{editingSoundId ? 'Edit Sound' : 'Add New Sound'}</h3>
         <div className="flex items-center gap-2">
           <Input 
             type="text" 
@@ -106,13 +124,26 @@ const SoundCustomizer: React.FC = () => {
             accept="audio/*"
             className="hidden"
           />
-          <button
+          <Button
             onClick={() => fileInputRef.current?.click()}
             className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1"
           >
             <Upload size={18} />
             Upload
-          </button>
+          </Button>
+          {editingSoundId && (
+            <Button
+              onClick={() => {
+                setEditingSoundId(null);
+                setNewSoundName('');
+              }}
+              variant="outline"
+              className="px-3 py-2 rounded-lg flex items-center gap-1"
+            >
+              <X size={18} />
+              Cancel
+            </Button>
+          )}
         </div>
       </div>
       
@@ -140,14 +171,23 @@ const SoundCustomizer: React.FC = () => {
               <span className="font-medium">{sound.name}</span>
             </div>
             
-            {sound.isCustom && (
+            <div className="flex gap-2">
               <button
-                onClick={() => removeSound(sound.id)}
-                className="text-red-600 hover:text-red-800"
+                onClick={() => handleEditSound(sound)}
+                className="text-blue-600 hover:text-blue-800"
               >
-                <X size={18} />
+                <Edit size={18} />
               </button>
-            )}
+              
+              {sound.isCustom && (
+                <button
+                  onClick={() => removeSound(sound.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
           </motion.div>
         ))}
       </div>

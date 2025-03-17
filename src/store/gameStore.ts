@@ -36,6 +36,10 @@ export type QuizColors = {
   timerMid: string;
   timerEnd: string;
   activeTeam: string;
+  questionWindow: string;
+  cardBackground: string;
+  cardNumber: string;
+  teamColor: string;
 };
 
 export type GameState = {
@@ -97,7 +101,7 @@ export type GameActions = {
   setCustomColors: (colors: Partial<QuizColors>) => void;
   resetColors: () => void;
   
-  addCustomSound: (name: string, url: string) => void;
+  addCustomSound: (name: string, url: string, existingId?: string) => void;
   removeSound: (id: string) => void;
 };
 
@@ -137,7 +141,11 @@ const defaultColors: QuizColors = {
   timerStart: '#3B82F6',
   timerMid: '#F97316',
   timerEnd: '#EF4444',
-  activeTeam: '#3B82F6'
+  activeTeam: '#3B82F6',
+  questionWindow: '#FFFFFF',
+  cardBackground: '#3B82F6',
+  cardNumber: '#FFFFFF',
+  teamColor: '#6E59A5'
 };
 
 let broadcastChannel: BroadcastChannel | null = null;
@@ -171,7 +179,7 @@ export const useGameStore = create<GameStore>()(
       
       setCustomColors: (colors) => {
         const updatedColors = { ...get().quizColors, ...colors };
-        set({ quizColors: updatedColors });
+        useGameStore.setState({ quizColors: updatedColors });
         
         Object.entries(updatedColors).forEach(([key, value]) => {
           document.documentElement.style.setProperty(`--quiz-${key}`, value);
@@ -186,7 +194,7 @@ export const useGameStore = create<GameStore>()(
       },
       
       resetColors: () => {
-        set({ quizColors: defaultColors });
+        useGameStore.setState({ quizColors: defaultColors });
         
         Object.entries(defaultColors).forEach(([key, value]) => {
           document.documentElement.style.setProperty(`--quiz-${key}`, value);
@@ -200,15 +208,23 @@ export const useGameStore = create<GameStore>()(
         }
       },
       
-      addCustomSound: (name, url) => {
+      addCustomSound: (name: string, url: string, existingId?: string) => {
         const newSound: Sound = {
-          id: `custom-${Date.now()}`,
+          id: existingId || `custom-${Date.now()}`,
           name,
           url,
           isCustom: true
         };
         
-        set({ sounds: [...get().sounds, newSound] });
+        let updatedSounds;
+        if (existingId) {
+          updatedSounds = get().sounds.filter(s => s.id !== existingId);
+          updatedSounds.push(newSound);
+        } else {
+          updatedSounds = [...get().sounds, newSound];
+        }
+        
+        useGameStore.setState({ sounds: updatedSounds });
         
         if (broadcastChannel) {
           broadcastChannel.postMessage({

@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import Timer from './Timer';
 import { X } from 'lucide-react';
 import { playSound } from '@/utils/sound';
+import { Button } from '@/components/ui/button';
 
 interface QuestionViewProps {
   isPlayerView?: boolean;
@@ -22,7 +23,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     teams,
     currentTeamIndex,
     updateTeamPoints,
-    showNotification
+    showNotification,
+    quizColors
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -102,7 +104,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     <AnimatePresence mode="wait">
       <motion.div
         key="question-view"
-        className="w-full h-full flex flex-col p-6 bg-white rounded-xl neo-shadow"
+        className="w-full h-full flex flex-col p-6 rounded-xl neo-shadow"
+        style={{ backgroundColor: quizColors.questionWindow || '#FFFFFF' }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
@@ -112,12 +115,14 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
           {!isPlayerView && (
-            <button 
+            <Button 
+              variant="ghost" 
+              size="icon"
               onClick={handleClose}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="rounded-full hover:bg-gray-100 transition-colors"
             >
               <X size={24} className="text-gray-600" />
-            </button>
+            </Button>
           )}
         </div>
         
@@ -144,6 +149,14 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
                 )}
                 ${revealAnswer && 'cursor-default'}
               `}
+              style={{
+                backgroundColor: revealAnswer 
+                  ? (index === question.correctAnswerIndex ? `${quizColors.correct}20` : `${quizColors.incorrect}20`)
+                  : (selectedAnswerIndex === index ? `${quizColors.selected}20` : '#FFFFFF'),
+                color: revealAnswer
+                  ? (index === question.correctAnswerIndex ? quizColors.correct : quizColors.incorrect)
+                  : (selectedAnswerIndex === index ? quizColors.selected : '#333333')
+              }}
               whileHover={{ scale: revealAnswer ? 1 : 1.03 }}
               whileTap={{ scale: revealAnswer ? 1 : 0.98 }}
               disabled={revealAnswer}

@@ -7,8 +7,8 @@ import { useGameStore } from '@/store/gameStore';
 import { Check, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type ColorKey = 'correct' | 'incorrect' | 'selected' | 'timerStart' | 'timerMid' | 'timerEnd' | 'activeTeam';
-type ColorName = 'Correct Answer' | 'Incorrect Answer' | 'Selected Answer' | 'Timer Start' | 'Timer Middle' | 'Timer End' | 'Active Team';
+type ColorKey = 'correct' | 'incorrect' | 'selected' | 'timerStart' | 'timerMid' | 'timerEnd' | 'activeTeam' | 'questionWindow' | 'cardBackground' | 'cardNumber' | 'teamColor';
+type ColorName = 'Correct Answer' | 'Incorrect Answer' | 'Selected Answer' | 'Timer Start' | 'Timer Middle' | 'Timer End' | 'Active Team' | 'Question Window' | 'Card Background' | 'Card Number' | 'Team Color';
 
 interface ColorOption {
   key: ColorKey;
@@ -27,7 +27,11 @@ const ColorCustomizer: React.FC = () => {
     { key: 'timerStart', name: 'Timer Start', value: quizColors.timerStart },
     { key: 'timerMid', name: 'Timer Middle', value: quizColors.timerMid },
     { key: 'timerEnd', name: 'Timer End', value: quizColors.timerEnd },
-    { key: 'activeTeam', name: 'Active Team', value: quizColors.activeTeam }
+    { key: 'activeTeam', name: 'Active Team', value: quizColors.activeTeam },
+    { key: 'questionWindow', name: 'Question Window', value: quizColors.questionWindow || '#FFFFFF' },
+    { key: 'cardBackground', name: 'Card Background', value: quizColors.cardBackground || '#3B82F6' },
+    { key: 'cardNumber', name: 'Card Number', value: quizColors.cardNumber || '#FFFFFF' },
+    { key: 'teamColor', name: 'Team Color', value: quizColors.teamColor || '#6E59A5' }
   ];
 
   const handleColorChange = (color: { hex: string }) => {
@@ -96,7 +100,7 @@ const ColorCustomizer: React.FC = () => {
             color={quizColors[activeColor]}
             onChange={handleColorChange}
             disableAlpha={true}
-            presetColors={['#10B981', '#EF4444', '#3B82F6', '#F97316', '#8B5CF6', '#EC4899']}
+            presetColors={['#10B981', '#EF4444', '#3B82F6', '#F97316', '#8B5CF6', '#EC4899', '#FFFFFF', '#6E59A5', '#D6BCFA']}
           />
         </motion.div>
       )}
