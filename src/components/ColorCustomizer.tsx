@@ -4,7 +4,8 @@ import { SketchPicker } from 'react-color';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
-import { Check } from 'lucide-react';
+import { Check, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 type ColorKey = 'correct' | 'incorrect' | 'selected' | 'timerStart' | 'timerMid' | 'timerEnd' | 'activeTeam';
 type ColorName = 'Correct Answer' | 'Incorrect Answer' | 'Selected Answer' | 'Timer Start' | 'Timer Middle' | 'Timer End' | 'Active Team';
@@ -16,7 +17,7 @@ interface ColorOption {
 }
 
 const ColorCustomizer: React.FC = () => {
-  const { setCustomColors, quizColors } = useGameStore();
+  const { setCustomColors, quizColors, resetColors } = useGameStore();
   const [activeColor, setActiveColor] = useState<ColorKey | null>(null);
 
   const colorOptions: ColorOption[] = [
@@ -41,7 +42,19 @@ const ColorCustomizer: React.FC = () => {
 
   return (
     <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Color Customization</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Color Customization</h2>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={resetColors}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw size={14} />
+          Reset to Default
+        </Button>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {colorOptions.map((option) => (
           <div key={option.key} className="flex items-center gap-3">
