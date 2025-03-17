@@ -475,11 +475,11 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
           
         case 'SET_COMPLETED_QUESTIONS':
           if (payload.completedQuestions) {
-            store.setQuestions(store.questions.map(q => 
-              payload.completedQuestions.includes(q.id) 
-                ? { ...q, completed: true } 
-                : q
-            ));
+            payload.completedQuestions.forEach((id: number) => {
+              if (!store.completedQuestions.includes(id)) {
+                store.markQuestionCompleted(id);
+              }
+            });
           }
           break;
           
