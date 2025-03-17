@@ -42,7 +42,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
           showNotification(`Prize: ${question.customReward}`, 'success');
         }
       } else if (isPlayerView && selectedAnswerIndex !== null && 
-                selectedAnswer !== question?.correctAnswerIndex && 
+                selectedAnswerIndex !== question?.correctAnswerIndex && 
                 question?.usedCustomReward && question?.customPenalty) {
         showNotification(`Penalty: ${question.customPenalty}`, 'error');
       }

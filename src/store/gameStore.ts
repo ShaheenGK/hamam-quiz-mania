@@ -666,7 +666,7 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
             const sounds = [...store.sounds];
             if (!sounds.some(s => s.id === payload.sound.id)) {
               sounds.push(payload.sound);
-              set({ sounds });
+              useGameStore.setState({ sounds });
             }
           }
           break;
@@ -674,7 +674,7 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
         case 'REMOVE_SOUND':
           if (payload.soundId) {
             const sounds = store.sounds.filter(s => s.id !== payload.soundId);
-            set({ sounds });
+            useGameStore.setState({ sounds });
           }
           break;
       }
