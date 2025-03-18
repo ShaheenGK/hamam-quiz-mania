@@ -61,6 +61,9 @@ export type GameState = {
   };
   quizColors: QuizColors;
   sounds: Sound[];
+  logoUrl: string | null;
+  logoText: string | null;
+  logoSize: number;
 };
 
 export type GameActions = {
@@ -103,6 +106,10 @@ export type GameActions = {
   
   addCustomSound: (name: string, url: string, existingId?: string) => void;
   removeSound: (id: string) => void;
+  
+  setLogoUrl: (url: string | null) => void;
+  setLogoText: (text: string | null) => void;
+  setLogoSize: (size: number) => void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -176,6 +183,42 @@ export const useGameStore = create<GameStore>()(
       },
       quizColors: defaultColors,
       sounds: defaultSounds,
+      logoUrl: null,
+      logoText: null,
+      logoSize: 100,
+      
+      setLogoUrl: (url) => {
+        set({ logoUrl: url });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_LOGO_URL',
+            payload: { url }
+          });
+        }
+      },
+      
+      setLogoText: (text) => {
+        set({ logoText: text });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_LOGO_TEXT',
+            payload: { text }
+          });
+        }
+      },
+      
+      setLogoSize: (size) => {
+        set({ logoSize: size });
+        
+        if (broadcastChannel) {
+          broadcastChannel.postMessage({
+            type: 'SET_LOGO_SIZE',
+            payload: { size }
+          });
+        }
+      },
       
       setCustomColors: (colors) => {
         const updatedColors = { ...get().quizColors, ...colors };
@@ -596,6 +639,9 @@ export const useGameStore = create<GameStore>()(
         currentTeamIndex: state.currentTeamIndex,
         quizColors: state.quizColors,
         sounds: state.sounds,
+        logoUrl: state.logoUrl,
+        logoText: state.logoText,
+        logoSize: state.logoSize,
       }),
     }
   )
@@ -611,7 +657,7 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
     if (role === 'player' || role === 'admin' || role === 'host') {
       switch (type) {
         case 'SET_TEAMS':
-          store.setTeams(payload.teams);
+          useGameStore.setState({ teams: payload.teams });
           break;
           
         case 'SET_CURRENT_TEAM':
@@ -693,6 +739,18 @@ export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') =
             useGameStore.setState({ sounds });
           }
           break;
+          
+        case 'SET_LOGO_URL':
+          useGameStore.setState({ logoUrl: payload.url });
+          break;
+          
+        case 'SET_LOGO_TEXT':
+          useGameStore.setState({ logoText: payload.text });
+          break;
+          
+        case 'SET_LOGO_SIZE':
+          useGameStore.setState({ logoSize: payload.size });
+          break;
       }
     }
   };
@@ -727,3 +785,4 @@ export const stopTimerInterval = () => {
     timerInterval = null;
   }
 };
+

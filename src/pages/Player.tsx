@@ -5,6 +5,7 @@ import QuestionGrid from '@/components/QuestionGrid';
 import QuestionView from '@/components/QuestionView';
 import TeamDisplay from '@/components/TeamDisplay';
 import Notification from '@/components/Notification';
+import Logo from '@/components/Logo';
 import { preloadSounds } from '@/utils/sound';
 
 const Player: React.FC = () => {
@@ -42,6 +43,9 @@ const Player: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-800">Hamam Quiz Game</h1>
           <p className="text-lg font-medium text-gray-600">Player View (Spectate Only)</p>
         </div>
+        
+        {/* Logo */}
+        <Logo />
         
         {/* Team Display */}
         {teams.length > 0 && <TeamDisplay />}

@@ -3,17 +3,18 @@ import { motion } from 'framer-motion';
 import { useGameStore, Question } from '@/store/gameStore';
 import { 
   Plus, X, Save, Edit, Trash, Upload, Download, 
-  RotateCcw, Check, FileText, RefreshCw, Palette, Music
+  RotateCcw, Check, FileText, RefreshCw, Palette, Music, Image
 } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 import ColorCustomizer from '@/components/ColorCustomizer';
 import SoundCustomizer from '@/components/SoundCustomizer';
+import LogoCustomizer from '@/components/LogoCustomizer';
 
 const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [activeTab, setActiveTab] = useState<'questions' | 'teams' | 'appearance' | 'sounds'>('questions');
+  const [activeTab, setActiveTab] = useState<'questions' | 'teams' | 'appearance' | 'sounds' | 'logo'>('questions');
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     text: '',
@@ -244,7 +245,7 @@ const Admin: React.FC = () => {
           </div>
           
           {/* Tabs */}
-          <div className="flex border-b border-gray-200 mb-6">
+          <div className="flex flex-wrap border-b border-gray-200 mb-6">
             <button
               className={`px-4 py-2 font-medium text-sm ${
                 activeTab === 'questions' 
@@ -274,7 +275,7 @@ const Admin: React.FC = () => {
               onClick={() => setActiveTab('appearance')}
             >
               <Palette size={16} />
-              Appearance
+              Colors
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm flex items-center gap-1 ${
@@ -286,6 +287,17 @@ const Admin: React.FC = () => {
             >
               <Music size={16} />
               Sounds
+            </button>
+            <button
+              className={`px-4 py-2 font-medium text-sm flex items-center gap-1 ${
+                activeTab === 'logo' 
+                  ? 'text-blue-600 border-b-2 border-blue-600' 
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+              onClick={() => setActiveTab('logo')}
+            >
+              <Image size={16} />
+              Logo
             </button>
           </div>
           
@@ -578,6 +590,13 @@ const Admin: React.FC = () => {
           {activeTab === 'sounds' && (
             <div>
               <SoundCustomizer />
+            </div>
+          )}
+
+          {/* Logo Tab */}
+          {activeTab === 'logo' && (
+            <div>
+              <LogoCustomizer />
             </div>
           )}
         </div>

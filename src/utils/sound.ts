@@ -22,6 +22,19 @@ export const preloadSounds = () => {
       audio.src = path;
       audio.preload = 'auto';
       audioCache[key] = audio;
+      
+      // Test loading by doing a short play and immediate pause
+      audio.volume = 0;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = 1;
+        }).catch(err => {
+          console.error(`Error preloading sound ${key}:`, err);
+        });
+      }
     } catch (error) {
       console.error(`Failed to preload sound: ${key}`, error);
     }
