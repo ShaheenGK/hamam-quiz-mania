@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultQuestions } from '@/data/defaultQuestions';
@@ -64,6 +65,7 @@ export type GameState = {
   logoUrl: string | null;
   logoText: string | null;
   logoSize: number;
+  lastUpdateTimestamp: number;
 };
 
 export type GameActions = {
@@ -155,12 +157,7 @@ const defaultColors: QuizColors = {
   teamColor: '#6E59A5'
 };
 
-let broadcastChannel: BroadcastChannel | null = null;
-try {
-  broadcastChannel = new BroadcastChannel('hamam-quiz-game');
-} catch (error) {
-  console.error('BroadcastChannel is not supported in this browser');
-}
+const SYNC_KEY = 'hamam-quiz-game-sync';
 
 export const useGameStore = create<GameStore>()(
   persist(
@@ -186,69 +183,75 @@ export const useGameStore = create<GameStore>()(
       logoUrl: null,
       logoText: null,
       logoSize: 100,
+      lastUpdateTimestamp: Date.now(),
       
       setLogoUrl: (url) => {
-        set({ logoUrl: url });
+        set({ 
+          logoUrl: url,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_LOGO_URL',
-            payload: { url }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_LOGO_URL',
+          payload: { url }
+        });
       },
       
       setLogoText: (text) => {
-        set({ logoText: text });
+        set({ 
+          logoText: text,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_LOGO_TEXT',
-            payload: { text }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_LOGO_TEXT',
+          payload: { text }
+        });
       },
       
       setLogoSize: (size) => {
-        set({ logoSize: size });
+        set({ 
+          logoSize: size,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_LOGO_SIZE',
-            payload: { size }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_LOGO_SIZE',
+          payload: { size }
+        });
       },
       
       setCustomColors: (colors) => {
         const updatedColors = { ...get().quizColors, ...colors };
-        useGameStore.setState({ quizColors: updatedColors });
+        useGameStore.setState({ 
+          quizColors: updatedColors,
+          lastUpdateTimestamp: Date.now()
+        });
         
         Object.entries(updatedColors).forEach(([key, value]) => {
           document.documentElement.style.setProperty(`--quiz-${key}`, value);
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_COLORS',
-            payload: { colors: updatedColors }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_COLORS',
+          payload: { colors: updatedColors }
+        });
       },
       
       resetColors: () => {
-        useGameStore.setState({ quizColors: defaultColors });
+        useGameStore.setState({ 
+          quizColors: defaultColors,
+          lastUpdateTimestamp: Date.now()
+        });
         
         Object.entries(defaultColors).forEach(([key, value]) => {
           document.documentElement.style.setProperty(`--quiz-${key}`, value);
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_COLORS',
-            payload: { colors: defaultColors }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_COLORS',
+          payload: { colors: defaultColors }
+        });
       },
       
       addCustomSound: (name: string, url: string, existingId?: string) => {
@@ -267,43 +270,51 @@ export const useGameStore = create<GameStore>()(
           updatedSounds = [...get().sounds, newSound];
         }
         
-        useGameStore.setState({ sounds: updatedSounds });
+        useGameStore.setState({ 
+          sounds: updatedSounds,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'ADD_SOUND',
-            payload: { sound: newSound }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_SOUNDS',
+          payload: { sounds: updatedSounds }
+        });
       },
       
       removeSound: (id) => {
         const sound = get().sounds.find(s => s.id === id);
         if (sound?.isCustom) {
-          set({ sounds: get().sounds.filter(s => s.id !== id) });
+          const updatedSounds = get().sounds.filter(s => s.id !== id);
           
-          if (broadcastChannel) {
-            broadcastChannel.postMessage({
-              type: 'REMOVE_SOUND',
-              payload: { soundId: id }
-            });
-          }
-        }
-      },
-      
-      setTeams: (teams) => {
-        set({ teams });
-        
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_TEAMS',
-            payload: { teams }
+          set({ 
+            sounds: updatedSounds,
+            lastUpdateTimestamp: Date.now()
+          });
+          
+          syncToLocalStorage({
+            type: 'SET_SOUNDS',
+            payload: { sounds: updatedSounds }
           });
         }
       },
       
+      setTeams: (teams) => {
+        set({ 
+          teams,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_TEAMS',
+          payload: { teams }
+        });
+      },
+      
       setQuestions: (questions) => {
-        set({ questions });
+        set({ 
+          questions,
+          lastUpdateTimestamp: Date.now()
+        });
       },
       
       addQuestion: (question) => {
@@ -312,31 +323,46 @@ export const useGameStore = create<GameStore>()(
           ? Math.max(...questions.map(q => q.id)) + 1 
           : 1;
         
+        const updatedQuestions = [...questions, { ...question, id: newId }];
+        
         set({
-          questions: [...questions, { ...question, id: newId }]
+          questions: updatedQuestions,
+          lastUpdateTimestamp: Date.now()
         });
       },
       
       updateQuestion: (id, updatedQuestion) => {
+        const updatedQuestions = get().questions.map(q => 
+          q.id === id ? { ...q, ...updatedQuestion } : q
+        );
+        
         set({
-          questions: get().questions.map(q => 
-            q.id === id ? { ...q, ...updatedQuestion } : q
-          )
+          questions: updatedQuestions,
+          lastUpdateTimestamp: Date.now()
         });
       },
       
       removeQuestion: (id) => {
+        const updatedQuestions = get().questions.filter(q => q.id !== id);
+        
         set({
-          questions: get().questions.filter(q => q.id !== id)
+          questions: updatedQuestions,
+          lastUpdateTimestamp: Date.now()
         });
       },
       
       uploadQuestions: (questions) => {
-        set({ questions });
+        set({ 
+          questions,
+          lastUpdateTimestamp: Date.now()
+        });
       },
       
       resetQuestions: () => {
-        set({ questions: defaultQuestions });
+        set({ 
+          questions: defaultQuestions,
+          lastUpdateTimestamp: Date.now()
+        });
       },
       
       addTeam: (name) => {
@@ -346,14 +372,15 @@ export const useGameStore = create<GameStore>()(
           : 1;
         
         const newTeams = [...teams, { id: newId, name, points: 0 }];
-        set({ teams: newTeams });
+        set({ 
+          teams: newTeams,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_TEAMS',
-            payload: { teams: newTeams }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_TEAMS',
+          payload: { teams: newTeams }
+        });
       },
       
       updateTeamPoints: (teamId, points) => {
@@ -361,7 +388,10 @@ export const useGameStore = create<GameStore>()(
           t.id === teamId ? { ...t, points: t.points + points } : t
         );
         
-        set({ teams: updatedTeams });
+        set({ 
+          teams: updatedTeams,
+          lastUpdateTimestamp: Date.now()
+        });
         
         const team = updatedTeams.find(t => t.id === teamId);
         if (team) {
@@ -372,12 +402,10 @@ export const useGameStore = create<GameStore>()(
           }
         }
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_TEAMS',
-            payload: { teams: updatedTeams }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_TEAMS',
+          payload: { teams: updatedTeams }
+        });
       },
       
       removeTeam: (teamId) => {
@@ -386,26 +414,26 @@ export const useGameStore = create<GameStore>()(
           teams: updatedTeams,
           currentTeamIndex: get().currentTeamIndex >= updatedTeams.length 
             ? 0 
-            : get().currentTeamIndex
+            : get().currentTeamIndex,
+          lastUpdateTimestamp: Date.now()
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_TEAMS',
-            payload: { teams: updatedTeams }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_TEAMS',
+          payload: { teams: updatedTeams }
+        });
       },
       
       setCurrentTeam: (index) => {
-        set({ currentTeamIndex: index });
+        set({ 
+          currentTeamIndex: index,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_CURRENT_TEAM',
-            payload: { index }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_CURRENT_TEAM',
+          payload: { index }
+        });
       },
       
       nextTeam: () => {
@@ -413,14 +441,15 @@ export const useGameStore = create<GameStore>()(
         if (teams.length === 0) return;
         
         const nextIndex = (currentTeamIndex + 1) % teams.length;
-        set({ currentTeamIndex: nextIndex });
+        set({ 
+          currentTeamIndex: nextIndex,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SET_CURRENT_TEAM',
-            payload: { index: nextIndex }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SET_CURRENT_TEAM',
+          payload: { index: nextIndex }
+        });
       },
       
       selectQuestion: (id) => {
@@ -433,32 +462,33 @@ export const useGameStore = create<GameStore>()(
           revealAnswer: false,
           activeView: 'question',
           remainingTime: question.timeLimit,
-          isTimerRunning: true
+          isTimerRunning: true,
+          lastUpdateTimestamp: Date.now()
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SELECT_QUESTION',
-            payload: { questionId: id }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SELECT_QUESTION',
+          payload: { questionId: id }
+        });
       },
       
       selectAnswer: (index) => {
-        set({ selectedAnswerIndex: index });
+        set({ 
+          selectedAnswerIndex: index,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SELECT_ANSWER',
-            payload: { answerIndex: index }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SELECT_ANSWER',
+          payload: { answerIndex: index }
+        });
       },
       
       showAnswer: () => {
         set({ 
           revealAnswer: true,
-          isTimerRunning: false
+          isTimerRunning: false,
+          lastUpdateTimestamp: Date.now()
         });
         
         const questionId = get().selectedQuestionId;
@@ -466,12 +496,10 @@ export const useGameStore = create<GameStore>()(
           get().markQuestionCompleted(questionId);
         }
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SHOW_ANSWER',
-            payload: {}
-          });
-        }
+        syncToLocalStorage({
+          type: 'SHOW_ANSWER',
+          payload: {}
+        });
       },
       
       closeQuestion: () => {
@@ -483,40 +511,41 @@ export const useGameStore = create<GameStore>()(
             selectedAnswerIndex: null,
             revealAnswer: false,
             activeView: 'grid',
-            isTimerRunning: false
+            isTimerRunning: false,
+            lastUpdateTimestamp: Date.now()
           });
           
           get().nextTeam();
           
-          if (broadcastChannel) {
-            broadcastChannel.postMessage({
-              type: 'CLOSE_QUESTION',
-              payload: {}
-            });
-          }
+          syncToLocalStorage({
+            type: 'CLOSE_QUESTION',
+            payload: {}
+          });
         }
       },
       
       startTimer: () => {
-        set({ isTimerRunning: true });
+        set({ 
+          isTimerRunning: true,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'START_TIMER',
-            payload: {}
-          });
-        }
+        syncToLocalStorage({
+          type: 'START_TIMER',
+          payload: {}
+        });
       },
       
       stopTimer: () => {
-        set({ isTimerRunning: false });
+        set({ 
+          isTimerRunning: false,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'STOP_TIMER',
-            payload: {}
-          });
-        }
+        syncToLocalStorage({
+          type: 'STOP_TIMER',
+          payload: {}
+        });
       },
       
       resetTimer: (time) => {
@@ -528,21 +557,25 @@ export const useGameStore = create<GameStore>()(
           newTime = question ? question.timeLimit : 30;
         }
         
-        set({ remainingTime: newTime || 30 });
+        set({ 
+          remainingTime: newTime || 30,
+          lastUpdateTimestamp: Date.now()
+        });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'RESET_TIMER',
-            payload: { time: newTime }
-          });
-        }
+        syncToLocalStorage({
+          type: 'RESET_TIMER',
+          payload: { time: newTime }
+        });
       },
       
       tickTimer: () => {
         const { remainingTime, isTimerRunning, revealAnswer } = get();
         
         if (isTimerRunning && remainingTime > 0 && !revealAnswer) {
-          set({ remainingTime: remainingTime - 1 });
+          set({ 
+            remainingTime: remainingTime - 1,
+            lastUpdateTimestamp: Date.now()
+          });
           
           if (remainingTime === 1) {
             get().showAnswer();
@@ -560,19 +593,18 @@ export const useGameStore = create<GameStore>()(
             visible: true,
             message,
             type
-          }
+          },
+          lastUpdateTimestamp: Date.now()
         });
         
         setTimeout(() => {
           get().hideNotification();
         }, 5000);
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'SHOW_NOTIFICATION',
-            payload: { message, type }
-          });
-        }
+        syncToLocalStorage({
+          type: 'SHOW_NOTIFICATION',
+          payload: { message, type }
+        });
       },
       
       hideNotification: () => {
@@ -580,30 +612,28 @@ export const useGameStore = create<GameStore>()(
           notification: {
             ...get().notification,
             visible: false
-          }
+          },
+          lastUpdateTimestamp: Date.now()
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'HIDE_NOTIFICATION',
-            payload: {}
-          });
-        }
+        syncToLocalStorage({
+          type: 'HIDE_NOTIFICATION',
+          payload: {}
+        });
       },
       
       markQuestionCompleted: (id) => {
         if (!get().completedQuestions.includes(id)) {
           const updatedCompleted = [...get().completedQuestions, id];
           set({
-            completedQuestions: updatedCompleted
+            completedQuestions: updatedCompleted,
+            lastUpdateTimestamp: Date.now()
           });
           
-          if (broadcastChannel) {
-            broadcastChannel.postMessage({
-              type: 'SET_COMPLETED_QUESTIONS',
-              payload: { completedQuestions: updatedCompleted }
-            });
-          }
+          syncToLocalStorage({
+            type: 'SET_COMPLETED_QUESTIONS',
+            payload: { completedQuestions: updatedCompleted }
+          });
         }
       },
       
@@ -619,15 +649,14 @@ export const useGameStore = create<GameStore>()(
           activeView: 'grid',
           isTimerRunning: false,
           remainingTime: 0,
-          teams: updatedTeams
+          teams: updatedTeams,
+          lastUpdateTimestamp: Date.now()
         });
         
-        if (broadcastChannel) {
-          broadcastChannel.postMessage({
-            type: 'RESET_GAME',
-            payload: { teams: updatedTeams }
-          });
-        }
+        syncToLocalStorage({
+          type: 'RESET_GAME',
+          payload: { teams: updatedTeams }
+        });
       }
     }),
     {
@@ -647,112 +676,135 @@ export const useGameStore = create<GameStore>()(
   )
 );
 
-export const initializeBroadcastListener = (role: 'admin' | 'host' | 'player') => {
-  if (!broadcastChannel) return;
+// Function to sync state to localStorage
+const syncToLocalStorage = (action: any) => {
+  const timestamp = Date.now();
+  localStorage.setItem(SYNC_KEY, JSON.stringify({
+    action,
+    timestamp
+  }));
+};
+
+// Function to initialize localStorage sync
+export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') => {
+  let lastProcessedTimestamp = 0;
   
-  broadcastChannel.onmessage = (event) => {
-    const { type, payload } = event.data;
-    const store = useGameStore.getState();
-    
-    if (role === 'player' || role === 'admin' || role === 'host') {
-      switch (type) {
-        case 'SET_TEAMS':
-          useGameStore.setState({ teams: payload.teams });
-          break;
-          
-        case 'SET_CURRENT_TEAM':
-          store.setCurrentTeam(payload.index);
-          break;
-          
-        case 'SET_COMPLETED_QUESTIONS':
-          if (payload.completedQuestions) {
-            payload.completedQuestions.forEach((id: number) => {
-              if (!store.completedQuestions.includes(id)) {
-                store.markQuestionCompleted(id);
-              }
-            });
-          }
-          break;
-          
-        case 'SELECT_QUESTION':
-          store.selectQuestion(payload.questionId);
-          break;
-          
-        case 'SELECT_ANSWER':
-          store.selectAnswer(payload.answerIndex);
-          break;
-          
-        case 'SHOW_ANSWER':
-          store.showAnswer();
-          break;
-          
-        case 'CLOSE_QUESTION':
-          store.closeQuestion();
-          break;
-          
-        case 'START_TIMER':
-          store.startTimer();
-          break;
-          
-        case 'STOP_TIMER':
-          store.stopTimer();
-          break;
-          
-        case 'RESET_TIMER':
-          store.resetTimer(payload.time);
-          break;
-          
-        case 'SHOW_NOTIFICATION':
-          store.showNotification(payload.message, payload.type);
-          break;
-          
-        case 'HIDE_NOTIFICATION':
-          store.hideNotification();
-          break;
-        
-        case 'RESET_GAME':
-          if (payload.teams) {
-            store.setTeams(payload.teams);
-          }
-          store.resetGame();
-          break;
-          
-        case 'SET_COLORS':
-          if (payload.colors) {
-            store.setCustomColors(payload.colors);
-          }
-          break;
-          
-        case 'ADD_SOUND':
-          if (payload.sound) {
-            const sounds = [...store.sounds];
-            if (!sounds.some(s => s.id === payload.sound.id)) {
-              sounds.push(payload.sound);
-              useGameStore.setState({ sounds });
+  // Check for updates every 500ms
+  const checkForUpdates = () => {
+    try {
+      const syncData = localStorage.getItem(SYNC_KEY);
+      if (!syncData) return;
+      
+      const { action, timestamp } = JSON.parse(syncData);
+      
+      // Skip if we've already processed this update or if it's our own update
+      if (timestamp <= lastProcessedTimestamp) return;
+      if (timestamp <= useGameStore.getState().lastUpdateTimestamp) return;
+      
+      lastProcessedTimestamp = timestamp;
+      
+      // Process the action
+      const store = useGameStore.getState();
+      
+      if (role === 'player' || role === 'host') {
+        switch (action.type) {
+          case 'SET_TEAMS':
+            useGameStore.setState({ teams: action.payload.teams });
+            break;
+            
+          case 'SET_CURRENT_TEAM':
+            store.setCurrentTeam(action.payload.index);
+            break;
+            
+          case 'SET_COMPLETED_QUESTIONS':
+            if (action.payload.completedQuestions) {
+              action.payload.completedQuestions.forEach((id: number) => {
+                if (!store.completedQuestions.includes(id)) {
+                  store.markQuestionCompleted(id);
+                }
+              });
             }
-          }
-          break;
+            break;
+            
+          case 'SELECT_QUESTION':
+            store.selectQuestion(action.payload.questionId);
+            break;
+            
+          case 'SELECT_ANSWER':
+            store.selectAnswer(action.payload.answerIndex);
+            break;
+            
+          case 'SHOW_ANSWER':
+            store.showAnswer();
+            break;
+            
+          case 'CLOSE_QUESTION':
+            store.closeQuestion();
+            break;
+            
+          case 'START_TIMER':
+            store.startTimer();
+            break;
+            
+          case 'STOP_TIMER':
+            store.stopTimer();
+            break;
+            
+          case 'RESET_TIMER':
+            store.resetTimer(action.payload.time);
+            break;
+            
+          case 'SHOW_NOTIFICATION':
+            store.showNotification(action.payload.message, action.payload.type);
+            break;
+            
+          case 'HIDE_NOTIFICATION':
+            store.hideNotification();
+            break;
           
-        case 'REMOVE_SOUND':
-          if (payload.soundId) {
-            const sounds = store.sounds.filter(s => s.id !== payload.soundId);
-            useGameStore.setState({ sounds });
-          }
-          break;
-          
-        case 'SET_LOGO_URL':
-          useGameStore.setState({ logoUrl: payload.url });
-          break;
-          
-        case 'SET_LOGO_TEXT':
-          useGameStore.setState({ logoText: payload.text });
-          break;
-          
-        case 'SET_LOGO_SIZE':
-          useGameStore.setState({ logoSize: payload.size });
-          break;
+          case 'RESET_GAME':
+            if (action.payload.teams) {
+              store.setTeams(action.payload.teams);
+            }
+            store.resetGame();
+            break;
+            
+          case 'SET_COLORS':
+            if (action.payload.colors) {
+              store.setCustomColors(action.payload.colors);
+            }
+            break;
+            
+          case 'SET_SOUNDS':
+            if (action.payload.sounds) {
+              useGameStore.setState({ sounds: action.payload.sounds });
+            }
+            break;
+            
+          case 'SET_LOGO_URL':
+            useGameStore.setState({ logoUrl: action.payload.url });
+            break;
+            
+          case 'SET_LOGO_TEXT':
+            useGameStore.setState({ logoText: action.payload.text });
+            break;
+            
+          case 'SET_LOGO_SIZE':
+            useGameStore.setState({ logoSize: action.payload.size });
+            break;
+        }
       }
+    } catch (error) {
+      console.error('Error processing localStorage sync:', error);
     }
+  };
+  
+  // Set up interval to check for updates
+  const syncInterval = setInterval(checkForUpdates, 500);
+  
+  // Return cleanup function
+  return () => {
+    clearInterval(syncInterval);
   };
 };
 
@@ -762,7 +814,9 @@ export const playSound = (soundId: string) => {
   
   if (sound) {
     const audio = new Audio(sound.url);
-    audio.play();
+    audio.play().catch(err => {
+      console.error('Error playing sound:', err);
+    });
   }
 };
 
@@ -785,4 +839,3 @@ export const stopTimerInterval = () => {
     timerInterval = null;
   }
 };
-
