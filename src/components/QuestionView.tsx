@@ -53,6 +53,14 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     }
   }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
   
+  // Listen for state changes that should close the question view
+  useEffect(() => {
+    if (isPlayerView && activeView === 'grid') {
+      // The host has closed the question, so we should too
+      closeQuestion();
+    }
+  }, [isPlayerView, activeView, closeQuestion]);
+  
   if (!question) return null;
   
   const handleAnswerSelect = (index: number) => {
@@ -99,6 +107,9 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     // Close question after awarding points
     closeQuestion();
   };
+  
+  // Get the activeView from gameStore to properly sync question closing
+  const { activeView } = useGameStore();
   
   return (
     <AnimatePresence mode="wait">

@@ -504,23 +504,23 @@ export const useGameStore = create<GameStore>()(
       closeQuestion: () => {
         const { selectedQuestionId, revealAnswer } = get();
         
-        if (revealAnswer || selectedQuestionId === null) {
-          set({
-            selectedQuestionId: null,
-            selectedAnswerIndex: null,
-            revealAnswer: false,
-            activeView: 'grid',
-            isTimerRunning: false,
-            lastUpdateTimestamp: Date.now()
-          });
-          
+        set({
+          selectedQuestionId: null,
+          selectedAnswerIndex: null,
+          revealAnswer: false,
+          activeView: 'grid',
+          isTimerRunning: false,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        if (revealAnswer) {
           get().nextTeam();
-          
-          syncToLocalStorage({
-            type: 'CLOSE_QUESTION',
-            payload: {}
-          });
         }
+        
+        syncToLocalStorage({
+          type: 'CLOSE_QUESTION',
+          payload: {}
+        });
       },
       
       startTimer: () => {
@@ -675,7 +675,6 @@ export const useGameStore = create<GameStore>()(
   )
 );
 
-// Function to sync state to localStorage
 const syncToLocalStorage = (action: any) => {
   const timestamp = Date.now();
   localStorage.setItem(SYNC_KEY, JSON.stringify({
@@ -684,11 +683,9 @@ const syncToLocalStorage = (action: any) => {
   }));
 };
 
-// Function to initialize localStorage sync
 export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') => {
   let lastProcessedTimestamp = 0;
   
-  // Check for updates every 500ms
   const checkForUpdates = () => {
     try {
       const syncData = localStorage.getItem(SYNC_KEY);
@@ -696,13 +693,11 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
       
       const { action, timestamp } = JSON.parse(syncData);
       
-      // Skip if we've already processed this update or if it's our own update
       if (timestamp <= lastProcessedTimestamp) return;
       if (timestamp <= useGameStore.getState().lastUpdateTimestamp) return;
       
       lastProcessedTimestamp = timestamp;
       
-      // Process the action
       const store = useGameStore.getState();
       
       if (role === 'player' || role === 'host') {
@@ -794,10 +789,8 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
     }
   };
   
-  // Set up interval to check for updates
   const syncInterval = setInterval(checkForUpdates, 500);
   
-  // Return cleanup function
   return () => {
     clearInterval(syncInterval);
   };
