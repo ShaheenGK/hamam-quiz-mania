@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { useGameStore, startTimerInterval, stopTimerInterval, initializeBroadcastListener } from '@/store/gameStore';
+import { useGameStore, startTimerInterval, stopTimerInterval, initializeLocalStorageSync } from '@/store/gameStore';
 import QuestionGrid from '@/components/QuestionGrid';
 import QuestionView from '@/components/QuestionView';
 import TeamDisplay from '@/components/TeamDisplay';
@@ -12,13 +12,14 @@ const Player: React.FC = () => {
   const { activeView, teams } = useGameStore();
 
   useEffect(() => {
-    // Initialize the timer and broadcast listener
+    // Initialize the timer and localStorage sync
     startTimerInterval();
-    initializeBroadcastListener('player');
+    const cleanupSync = initializeLocalStorageSync('player');
     preloadSounds();
 
     return () => {
       stopTimerInterval();
+      cleanupSync();
     };
   }, []);
 
