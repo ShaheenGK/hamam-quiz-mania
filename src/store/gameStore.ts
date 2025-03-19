@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { defaultQuestions } from '@/data/defaultQuestions';
@@ -537,7 +536,7 @@ export const useGameStore = create<GameStore>()(
       },
       
       stopTimer: () => {
-        set({ 
+        useGameStore.setState({ 
           isTimerRunning: false,
           lastUpdateTimestamp: Date.now()
         });
@@ -623,9 +622,9 @@ export const useGameStore = create<GameStore>()(
       },
       
       markQuestionCompleted: (id) => {
-        if (!get().completedQuestions.includes(id)) {
-          const updatedCompleted = [...get().completedQuestions, id];
-          set({
+        if (!useGameStore.getState().completedQuestions.includes(id)) {
+          const updatedCompleted = [...useGameStore.getState().completedQuestions, id];
+          useGameStore.setState({
             completedQuestions: updatedCompleted,
             lastUpdateTimestamp: Date.now()
           });
@@ -718,11 +717,7 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
             
           case 'SET_COMPLETED_QUESTIONS':
             if (action.payload.completedQuestions) {
-              action.payload.completedQuestions.forEach((id: number) => {
-                if (!store.completedQuestions.includes(id)) {
-                  store.markQuestionCompleted(id);
-                }
-              });
+              useGameStore.setState({ completedQuestions: action.payload.completedQuestions });
             }
             break;
             
@@ -766,7 +761,7 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
             if (action.payload.teams) {
               store.setTeams(action.payload.teams);
             }
-            store.resetGame();
+            useGameStore.setState({ completedQuestions: [] });
             break;
             
           case 'SET_COLORS':
