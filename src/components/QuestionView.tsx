@@ -24,7 +24,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     currentTeamIndex,
     updateTeamPoints,
     showNotification,
-    quizColors
+    quizColors,
+    activeView // Get activeView from gameStore here at the top
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -108,8 +109,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     closeQuestion();
   };
   
-  // Get the activeView from gameStore to properly sync question closing
-  const { activeView } = useGameStore();
+  // Removed duplicate activeView declaration
   
   return (
     <AnimatePresence mode="wait">
