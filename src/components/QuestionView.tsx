@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
@@ -26,8 +25,11 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     showNotification,
     quizColors,
     activeView,
-    backgroundImageUrl,
-    questionWindowImageUrl
+    questionWindowImageUrl,
+    questionWindowOpacity,
+    questionWindowSize,
+    questionWindowPositionX,
+    questionWindowPositionY
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -137,9 +139,9 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     if (questionWindowImageUrl) {
       return {
         backgroundImage: `url(${questionWindowImageUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        backgroundSize: `${questionWindowSize}%`,
+        backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
+        backgroundColor: `rgba(255, 255, 255, ${questionWindowOpacity})`,
         backgroundBlendMode: 'overlay'
       };
     }
@@ -216,8 +218,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         {!isPlayerView && (
           <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">
-              {/* Reveal button is now hidden but functionality remains via spacebar */}
-              
               {showPointsControls && teams.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -237,8 +237,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
             </div>
           </div>
         )}
-        
-        {/* Spacebar hint has been removed but functionality remains */}
       </motion.div>
     </AnimatePresence>
   );
