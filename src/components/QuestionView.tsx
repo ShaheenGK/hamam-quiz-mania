@@ -214,17 +214,20 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
               )}
               
               {showPointsControls && teams.length > 0 && (
-                <Button
-                  onClick={handleAwardPoints}
-                  variant="default"
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95"
+                <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Award className="mr-2" size={20} />
-                  Award Points
-                </Button>
+                  <Button
+                    onClick={handleAwardPoints}
+                    variant="default"
+                    className="px-6 py-3 bg-green-600 hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95"
+                  >
+                    <Award className="mr-2" size={20} />
+                    Award Points
+                  </Button>
+                </motion.div>
               )}
             </div>
           </div>
