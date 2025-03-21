@@ -35,10 +35,9 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
   const question = questions.find(q => q.id === selectedQuestionId);
   const [showPointsControls, setShowPointsControls] = useState(false);
   
-  // Handle spacebar key press for revealing answer and awarding points
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && !isPlayerView) {
-      event.preventDefault(); // Prevent page scrolling
+      event.preventDefault();
       
       if (!revealAnswer) {
         handleRevealAnswer();
@@ -48,7 +47,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     }
   }, [revealAnswer, showPointsControls, isPlayerView]);
   
-  // Add and remove the keyboard event listener
   useEffect(() => {
     if (!isPlayerView) {
       window.addEventListener('keydown', handleKeyDown);
@@ -60,7 +58,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     if (revealAnswer) {
       setShowPointsControls(true);
       
-      // Auto-award points for player view when they get the correct answer
       if (isPlayerView && selectedAnswerIndex === question?.correctAnswerIndex && teams.length > 0 && currentTeamIndex < teams.length) {
         const currentTeam = teams[currentTeamIndex];
         
@@ -79,10 +76,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     }
   }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
   
-  // Listen for state changes that should close the question view
   useEffect(() => {
     if (isPlayerView && activeView === 'grid') {
-      // The host has closed the question, so we should too
       closeQuestion();
     }
   }, [isPlayerView, activeView, closeQuestion]);
@@ -117,24 +112,19 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
       const currentTeam = teams[currentTeamIndex];
       
       if (selectedAnswerIndex === question.correctAnswerIndex) {
-        // Award points for correct answer
         if (!question.usedCustomReward) {
           updateTeamPoints(currentTeam.id, question.points);
         } else if (question.customReward) {
-          // Show the reward notification
           showNotification(`Prize: ${question.customReward}`, 'success');
         }
       } else if (selectedAnswerIndex !== null && question.usedCustomReward && question.customPenalty) {
-        // Show the penalty notification
         showNotification(`Penalty: ${question.customPenalty}`, 'error');
       }
     }
     
-    // Close question after awarding points
     closeQuestion();
   };
   
-  // Get background styles
   const getBackgroundStyle = () => {
     if (questionWindowImageUrl) {
       return {
@@ -159,7 +149,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
       >
-        {/* Header with question and close button */}
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
           {!isPlayerView && (
@@ -174,10 +163,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
           )}
         </div>
         
-        {/* Timer */}
         <Timer />
         
-        {/* Answer Grid */}
         <div className="answers-grid grid grid-cols-2 gap-4 flex-grow mb-6">
           {question.answers.map((answer, index) => (
             <motion.button
@@ -214,7 +201,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
           ))}
         </div>
         
-        {/* Control buttons - Only show for host view */}
         {!isPlayerView && (
           <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">

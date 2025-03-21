@@ -68,6 +68,21 @@ export type GameState = {
   questionWindowImageUrl: string | null;
   customMessageImageUrl: string | null;
   lastUpdateTimestamp: number;
+  
+  backgroundOpacity: number;
+  backgroundSize: number;
+  backgroundPositionX: number;
+  backgroundPositionY: number;
+  
+  questionWindowOpacity: number;
+  questionWindowSize: number;
+  questionWindowPositionX: number;
+  questionWindowPositionY: number;
+  
+  customMessageOpacity: number;
+  customMessageSize: number;
+  customMessagePositionX: number;
+  customMessagePositionY: number;
 };
 
 export type GameActions = {
@@ -118,6 +133,21 @@ export type GameActions = {
   setBackgroundImage: (url: string | null) => void;
   setQuestionWindowImage: (url: string | null) => void;
   setCustomMessageImage: (url: string | null) => void;
+  
+  setBackgroundOpacity: (opacity: number) => void;
+  setBackgroundSize: (size: number) => void;
+  setBackgroundPositionX: (position: number) => void;
+  setBackgroundPositionY: (position: number) => void;
+  
+  setQuestionWindowOpacity: (opacity: number) => void;
+  setQuestionWindowSize: (size: number) => void;
+  setQuestionWindowPositionX: (position: number) => void;
+  setQuestionWindowPositionY: (position: number) => void;
+  
+  setCustomMessageOpacity: (opacity: number) => void;
+  setCustomMessageSize: (size: number) => void;
+  setCustomMessagePositionX: (position: number) => void;
+  setCustomMessagePositionY: (position: number) => void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -194,6 +224,21 @@ export const useGameStore = create<GameStore>()(
       customMessageImageUrl: null,
       lastUpdateTimestamp: Date.now(),
       
+      backgroundOpacity: 0.85,
+      backgroundSize: 100,
+      backgroundPositionX: 50,
+      backgroundPositionY: 50,
+      
+      questionWindowOpacity: 0.85,
+      questionWindowSize: 100,
+      questionWindowPositionX: 50,
+      questionWindowPositionY: 50,
+      
+      customMessageOpacity: 0.85,
+      customMessageSize: 100,
+      customMessagePositionX: 50,
+      customMessagePositionY: 50,
+      
       setBackgroundImage: (url) => {
         set({ 
           backgroundImageUrl: url,
@@ -227,6 +272,150 @@ export const useGameStore = create<GameStore>()(
         syncToLocalStorage({
           type: 'SET_CUSTOM_MESSAGE_IMAGE',
           payload: { url }
+        });
+      },
+      
+      setBackgroundOpacity: (opacity) => {
+        set({ 
+          backgroundOpacity: opacity,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_BACKGROUND_OPACITY',
+          payload: { opacity }
+        });
+      },
+      
+      setBackgroundSize: (size) => {
+        set({ 
+          backgroundSize: size,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_BACKGROUND_SIZE',
+          payload: { size }
+        });
+      },
+      
+      setBackgroundPositionX: (position) => {
+        set({ 
+          backgroundPositionX: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_BACKGROUND_POSITION_X',
+          payload: { position }
+        });
+      },
+      
+      setBackgroundPositionY: (position) => {
+        set({ 
+          backgroundPositionY: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_BACKGROUND_POSITION_Y',
+          payload: { position }
+        });
+      },
+      
+      setQuestionWindowOpacity: (opacity) => {
+        set({ 
+          questionWindowOpacity: opacity,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_QUESTION_WINDOW_OPACITY',
+          payload: { opacity }
+        });
+      },
+      
+      setQuestionWindowSize: (size) => {
+        set({ 
+          questionWindowSize: size,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_QUESTION_WINDOW_SIZE',
+          payload: { size }
+        });
+      },
+      
+      setQuestionWindowPositionX: (position) => {
+        set({ 
+          questionWindowPositionX: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_QUESTION_WINDOW_POSITION_X',
+          payload: { position }
+        });
+      },
+      
+      setQuestionWindowPositionY: (position) => {
+        set({ 
+          questionWindowPositionY: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_QUESTION_WINDOW_POSITION_Y',
+          payload: { position }
+        });
+      },
+      
+      setCustomMessageOpacity: (opacity) => {
+        set({ 
+          customMessageOpacity: opacity,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_CUSTOM_MESSAGE_OPACITY',
+          payload: { opacity }
+        });
+      },
+      
+      setCustomMessageSize: (size) => {
+        set({ 
+          customMessageSize: size,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_CUSTOM_MESSAGE_SIZE',
+          payload: { size }
+        });
+      },
+      
+      setCustomMessagePositionX: (position) => {
+        set({ 
+          customMessagePositionX: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_CUSTOM_MESSAGE_POSITION_X',
+          payload: { position }
+        });
+      },
+      
+      setCustomMessagePositionY: (position) => {
+        set({ 
+          customMessagePositionY: position,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_CUSTOM_MESSAGE_POSITION_Y',
+          payload: { position }
         });
       },
       
@@ -719,6 +908,18 @@ export const useGameStore = create<GameStore>()(
         backgroundImageUrl: state.backgroundImageUrl,
         questionWindowImageUrl: state.questionWindowImageUrl,
         customMessageImageUrl: state.customMessageImageUrl,
+        backgroundOpacity: state.backgroundOpacity,
+        backgroundSize: state.backgroundSize,
+        backgroundPositionX: state.backgroundPositionX,
+        backgroundPositionY: state.backgroundPositionY,
+        questionWindowOpacity: state.questionWindowOpacity,
+        questionWindowSize: state.questionWindowSize,
+        questionWindowPositionX: state.questionWindowPositionX,
+        questionWindowPositionY: state.questionWindowPositionY,
+        customMessageOpacity: state.customMessageOpacity,
+        customMessageSize: state.customMessageSize,
+        customMessagePositionX: state.customMessagePositionX,
+        customMessagePositionY: state.customMessagePositionY,
       }),
     }
   )
@@ -849,6 +1050,78 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
               useGameStore.setState({ customMessageImageUrl: action.payload.url });
             }
             break;
+            
+          case 'SET_BACKGROUND_OPACITY':
+            if (action.payload.opacity !== undefined) {
+              useGameStore.setState({ backgroundOpacity: action.payload.opacity });
+            }
+            break;
+            
+          case 'SET_BACKGROUND_SIZE':
+            if (action.payload.size !== undefined) {
+              useGameStore.setState({ backgroundSize: action.payload.size });
+            }
+            break;
+            
+          case 'SET_BACKGROUND_POSITION_X':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ backgroundPositionX: action.payload.position });
+            }
+            break;
+            
+          case 'SET_BACKGROUND_POSITION_Y':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ backgroundPositionY: action.payload.position });
+            }
+            break;
+            
+          case 'SET_QUESTION_WINDOW_OPACITY':
+            if (action.payload.opacity !== undefined) {
+              useGameStore.setState({ questionWindowOpacity: action.payload.opacity });
+            }
+            break;
+            
+          case 'SET_QUESTION_WINDOW_SIZE':
+            if (action.payload.size !== undefined) {
+              useGameStore.setState({ questionWindowSize: action.payload.size });
+            }
+            break;
+            
+          case 'SET_QUESTION_WINDOW_POSITION_X':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ questionWindowPositionX: action.payload.position });
+            }
+            break;
+            
+          case 'SET_QUESTION_WINDOW_POSITION_Y':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ questionWindowPositionY: action.payload.position });
+            }
+            break;
+            
+          case 'SET_CUSTOM_MESSAGE_OPACITY':
+            if (action.payload.opacity !== undefined) {
+              useGameStore.setState({ customMessageOpacity: action.payload.opacity });
+            }
+            break;
+            
+          case 'SET_CUSTOM_MESSAGE_SIZE':
+            if (action.payload.size !== undefined) {
+              useGameStore.setState({ customMessageSize: action.payload.size });
+            }
+            break;
+            
+          case 'SET_CUSTOM_MESSAGE_POSITION_X':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ customMessagePositionX: action.payload.position });
+            }
+            break;
+            
+          case 'SET_CUSTOM_MESSAGE_POSITION_Y':
+            if (action.payload.position !== undefined) {
+              useGameStore.setState({ customMessagePositionY: action.payload.position });
+            }
+            break;
         }
       }
     } catch (error) {
@@ -894,3 +1167,4 @@ export const stopTimerInterval = () => {
     timerInterval = null;
   }
 };
+
