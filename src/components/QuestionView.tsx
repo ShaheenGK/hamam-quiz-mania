@@ -25,7 +25,9 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     updateTeamPoints,
     showNotification,
     quizColors,
-    activeView
+    activeView,
+    backgroundImageUrl,
+    questionWindowImageUrl
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -130,12 +132,26 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     closeQuestion();
   };
   
+  // Get background styles
+  const getBackgroundStyle = () => {
+    if (questionWindowImageUrl) {
+      return {
+        backgroundImage: `url(${questionWindowImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        backgroundBlendMode: 'overlay'
+      };
+    }
+    return { backgroundColor: quizColors.questionWindow || '#FFFFFF' };
+  };
+  
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key="question-view"
         className="w-full h-full flex flex-col p-6 rounded-xl neo-shadow"
-        style={{ backgroundColor: quizColors.questionWindow || '#FFFFFF' }}
+        style={getBackgroundStyle()}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}

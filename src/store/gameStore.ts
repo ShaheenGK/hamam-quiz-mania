@@ -64,6 +64,9 @@ export type GameState = {
   logoUrl: string | null;
   logoText: string | null;
   logoSize: number;
+  backgroundImageUrl: string | null;
+  questionWindowImageUrl: string | null;
+  customMessageImageUrl: string | null;
   lastUpdateTimestamp: number;
 };
 
@@ -111,6 +114,10 @@ export type GameActions = {
   setLogoUrl: (url: string | null) => void;
   setLogoText: (text: string | null) => void;
   setLogoSize: (size: number) => void;
+  
+  setBackgroundImage: (url: string | null) => void;
+  setQuestionWindowImage: (url: string | null) => void;
+  setCustomMessageImage: (url: string | null) => void;
 };
 
 export type GameStore = GameState & GameActions;
@@ -182,7 +189,46 @@ export const useGameStore = create<GameStore>()(
       logoUrl: null,
       logoText: null,
       logoSize: 100,
+      backgroundImageUrl: null,
+      questionWindowImageUrl: null,
+      customMessageImageUrl: null,
       lastUpdateTimestamp: Date.now(),
+      
+      setBackgroundImage: (url) => {
+        set({ 
+          backgroundImageUrl: url,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_BACKGROUND_IMAGE',
+          payload: { url }
+        });
+      },
+      
+      setQuestionWindowImage: (url) => {
+        set({ 
+          questionWindowImageUrl: url,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_QUESTION_WINDOW_IMAGE',
+          payload: { url }
+        });
+      },
+      
+      setCustomMessageImage: (url) => {
+        set({ 
+          customMessageImageUrl: url,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_CUSTOM_MESSAGE_IMAGE',
+          payload: { url }
+        });
+      },
       
       setLogoUrl: (url) => {
         set({ 
@@ -670,6 +716,9 @@ export const useGameStore = create<GameStore>()(
         logoUrl: state.logoUrl,
         logoText: state.logoText,
         logoSize: state.logoSize,
+        backgroundImageUrl: state.backgroundImageUrl,
+        questionWindowImageUrl: state.questionWindowImageUrl,
+        customMessageImageUrl: state.customMessageImageUrl,
       }),
     }
   )
@@ -781,6 +830,24 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
             
           case 'SET_LOGO_SIZE':
             useGameStore.setState({ logoSize: action.payload.size });
+            break;
+            
+          case 'SET_BACKGROUND_IMAGE':
+            if (action.payload.url !== undefined) {
+              useGameStore.setState({ backgroundImageUrl: action.payload.url });
+            }
+            break;
+            
+          case 'SET_QUESTION_WINDOW_IMAGE':
+            if (action.payload.url !== undefined) {
+              useGameStore.setState({ questionWindowImageUrl: action.payload.url });
+            }
+            break;
+            
+          case 'SET_CUSTOM_MESSAGE_IMAGE':
+            if (action.payload.url !== undefined) {
+              useGameStore.setState({ customMessageImageUrl: action.payload.url });
+            }
             break;
         }
       }
