@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import Timer from './Timer';
-import { X } from 'lucide-react';
+import { X, Eye, Award } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 import { Button } from '@/components/ui/button';
 
@@ -30,6 +30,27 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
   
   const question = questions.find(q => q.id === selectedQuestionId);
   const [showPointsControls, setShowPointsControls] = useState(false);
+  
+  // Handle spacebar key press for revealing answer and awarding points
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.code === 'Space' && !isPlayerView) {
+      event.preventDefault(); // Prevent page scrolling
+      
+      if (!revealAnswer) {
+        handleRevealAnswer();
+      } else if (showPointsControls) {
+        handleAwardPoints();
+      }
+    }
+  }, [revealAnswer, showPointsControls, isPlayerView]);
+  
+  // Add and remove the keyboard event listener
+  useEffect(() => {
+    if (!isPlayerView) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [handleKeyDown, isPlayerView]);
   
   useEffect(() => {
     if (revealAnswer) {
@@ -179,37 +200,40 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         
         {/* Control buttons - Only show for host view */}
         {!isPlayerView && (
-          <div className="flex justify-between items-center mt-auto">
-            <div className="text-lg font-bold">
-              {!question.usedCustomReward && `${question.points} points`}
-            </div>
-            
+          <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">
               {!revealAnswer && (
-                <motion.button
+                <Button
                   onClick={handleRevealAnswer}
-                  className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
+                  variant="default"
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
                 >
+                  <Eye className="mr-2" size={20} />
                   Reveal Answer
-                </motion.button>
+                </Button>
               )}
               
               {showPointsControls && teams.length > 0 && (
-                <motion.button
+                <Button
                   onClick={handleAwardPoints}
-                  className="px-6 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 transition-colors"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
+                  variant="default"
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3 }}
                 >
+                  <Award className="mr-2" size={20} />
                   Award Points
-                </motion.button>
+                </Button>
               )}
             </div>
+          </div>
+        )}
+        
+        {/* Spacebar hint for desktop users (only in host view) */}
+        {!isPlayerView && (
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Press <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-md">Space</kbd> to {!revealAnswer ? "reveal answer" : "award points"}
           </div>
         )}
       </motion.div>
