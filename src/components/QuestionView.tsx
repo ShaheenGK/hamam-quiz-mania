@@ -25,7 +25,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     updateTeamPoints,
     showNotification,
     quizColors,
-    activeView // Get activeView from gameStore here at the top
+    activeView
   } = useGameStore();
   
   const question = questions.find(q => q.id === selectedQuestionId);
@@ -130,8 +130,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     closeQuestion();
   };
   
-  // Removed duplicate activeView declaration
-  
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -202,16 +200,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         {!isPlayerView && (
           <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">
-              {!revealAnswer && (
-                <Button
-                  onClick={handleRevealAnswer}
-                  variant="default"
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
-                >
-                  <Eye className="mr-2" size={20} />
-                  Reveal Answer
-                </Button>
-              )}
+              {/* Reveal button is now hidden but functionality remains via spacebar */}
               
               {showPointsControls && teams.length > 0 && (
                 <motion.div
@@ -233,12 +222,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
           </div>
         )}
         
-        {/* Spacebar hint for desktop users (only in host view) */}
-        {!isPlayerView && (
-          <div className="text-center text-sm text-gray-500 mt-4">
-            Press <kbd className="px-2 py-1 bg-gray-100 border border-gray-300 rounded-md">Space</kbd> to {!revealAnswer ? "reveal answer" : "award points"}
-          </div>
-        )}
+        {/* Spacebar hint has been removed but functionality remains */}
       </motion.div>
     </AnimatePresence>
   );
