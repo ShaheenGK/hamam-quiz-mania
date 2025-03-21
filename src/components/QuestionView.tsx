@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
@@ -35,7 +34,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
   
   const question = questions.find(q => q.id === selectedQuestionId);
   const [showPointsControls, setShowPointsControls] = useState(false);
-  const [isPointsAwarded, setIsPointsAwarded] = useState(false);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && !isPlayerView) {
@@ -43,11 +41,11 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
       
       if (!revealAnswer) {
         handleRevealAnswer();
-      } else if (showPointsControls && !isPointsAwarded) {
+      } else if (showPointsControls) {
         handleAwardPoints();
       }
     }
-  }, [revealAnswer, showPointsControls, isPlayerView, isPointsAwarded]);
+  }, [revealAnswer, showPointsControls, isPlayerView]);
   
   useEffect(() => {
     if (!isPlayerView) {
@@ -59,7 +57,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
   useEffect(() => {
     if (revealAnswer) {
       setShowPointsControls(true);
-      setIsPointsAwarded(false);
       
       if (isPlayerView && selectedAnswerIndex === question?.correctAnswerIndex && teams.length > 0 && currentTeamIndex < teams.length) {
         const currentTeam = teams[currentTeamIndex];
@@ -76,7 +73,6 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
       }
     } else {
       setShowPointsControls(false);
-      setIsPointsAwarded(false);
     }
   }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
   
@@ -126,7 +122,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
       }
     }
     
-    setIsPointsAwarded(true);
+    closeQuestion();
   };
   
   const getBackgroundStyle = () => {
@@ -208,7 +204,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
         {!isPlayerView && (
           <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">
-              {showPointsControls && !isPointsAwarded && teams.length > 0 && (
+              {showPointsControls && teams.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}

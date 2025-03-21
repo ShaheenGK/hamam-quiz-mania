@@ -5,17 +5,17 @@ import { useGameStore } from '@/store/gameStore';
 import { CheckCircle, XCircle, Info } from 'lucide-react';
 
 const Notification: React.FC = () => {
-  const { notification, hideNotification, notificationDisplayTime } = useGameStore();
+  const { notification, hideNotification } = useGameStore();
   
   useEffect(() => {
     if (notification.visible) {
       const timer = setTimeout(() => {
         hideNotification();
-      }, notificationDisplayTime); // Use the customizable display time
+      }, 5000); // 5 seconds display time
       
       return () => clearTimeout(timer);
     }
-  }, [notification.visible, hideNotification, notificationDisplayTime]);
+  }, [notification.visible, hideNotification]);
   
   const getIcon = () => {
     switch (notification.type) {
