@@ -818,16 +818,21 @@ export const useGameStore = create<GameStore>()(
       },
       
       tickTimer: () => {
-        const { remainingTime, isTimerRunning, revealAnswer } = get();
+        const { remainingTime, isTimerRunning, revealAnswer } = useGameStore.getState();
         
         if (isTimerRunning && remainingTime > 0 && !revealAnswer) {
-          set({ 
+          useGameStore.setState({ 
             remainingTime: remainingTime - 1,
             lastUpdateTimestamp: Date.now()
           });
           
           if (remainingTime === 1) {
-            get().showAnswer();
+            setTimeout(() => {
+              const store = useGameStore.getState();
+              if (store.isTimerRunning && !store.revealAnswer) {
+                store.showAnswer();
+              }
+            }, 100);
           }
         }
       },
@@ -1178,8 +1183,7 @@ export const startTimerInterval = () => {
   }
   
   timerInterval = window.setInterval(() => {
-    const store = useGameStore.getState();
-    store.tickTimer();
+    tickTimer();
   }, 1000) as unknown as number;
 };
 

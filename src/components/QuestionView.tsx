@@ -10,28 +10,31 @@ interface QuestionViewProps {
   isPlayerView?: boolean;
 }
 
-const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => {
+const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = false }) => {
   const { 
     questions, 
-    selectedQuestionId,
-    selectedAnswerIndex,
-    revealAnswer,
-    showAnswer,
-    closeQuestion,
-    selectAnswer,
-    teams,
+    selectedQuestionId, 
+    selectedAnswerIndex, 
+    revealAnswer, 
+    teams, 
     currentTeamIndex,
+    remainingTime,
+    isTimerRunning,
     updateTeamPoints,
+    closeQuestion,
+    startTimer,
+    stopTimer,
+    resetTimer,
     showNotification,
-    quizColors,
-    activeView,
+    selectAnswer,
+    showAnswer,
     questionWindowImageUrl,
     questionWindowOpacity,
     questionWindowSize,
     questionWindowPositionX,
-    questionWindowPositionY
+    questionWindowPositionY,
   } = useGameStore();
-  
+
   const question = questions.find(q => q.id === selectedQuestionId);
   const [showPointsControls, setShowPointsControls] = useState(false);
   
@@ -125,30 +128,23 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
     closeQuestion();
   };
   
-  const getBackgroundStyle = () => {
-    if (questionWindowImageUrl) {
-      return {
-        backgroundImage: `url(${questionWindowImageUrl})`,
-        backgroundSize: `${questionWindowSize}%`,
-        backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
-        backgroundColor: `rgba(255, 255, 255, ${questionWindowOpacity})`,
-        backgroundBlendMode: 'overlay'
-      };
-    }
-    return { backgroundColor: quizColors.questionWindow || '#FFFFFF' };
-  };
-  
+  const backgroundStyle = questionWindowImageUrl ? {
+    backgroundImage: `url(${questionWindowImageUrl})`,
+    backgroundSize: `${questionWindowSize}%`,
+    backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
+    opacity: questionWindowOpacity
+  } : {};
+
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key="question-view"
-        className="w-full h-full flex flex-col p-6 rounded-xl neo-shadow"
-        style={getBackgroundStyle()}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-      >
+    <div className="question-view relative">
+      {questionWindowImageUrl && (
+        <div 
+          className="absolute inset-0 rounded-xl -m-4"
+          style={backgroundStyle}
+        ></div>
+      )}
+      
+      <div className="relative z-10">
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
           {!isPlayerView && (
@@ -223,8 +219,8 @@ const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => 
             </div>
           </div>
         )}
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </div>
   );
 };
 
