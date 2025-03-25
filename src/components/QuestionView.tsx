@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
@@ -10,33 +11,31 @@ interface QuestionViewProps {
   isPlayerView?: boolean;
 }
 
-const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = false }) => {
+const QuestionView: React.FC<QuestionViewProps> = ({ isPlayerView = false }) => {
   const { 
     questions, 
-    selectedQuestionId, 
-    selectedAnswerIndex, 
-    revealAnswer, 
-    teams, 
-    currentTeamIndex,
-    remainingTime,
-    isTimerRunning,
-    updateTeamPoints,
-    closeQuestion,
-    startTimer,
-    stopTimer,
-    resetTimer,
-    showNotification,
-    selectAnswer,
+    selectedQuestionId,
+    selectedAnswerIndex,
+    revealAnswer,
     showAnswer,
+    closeQuestion,
+    selectAnswer,
+    teams,
+    currentTeamIndex,
+    updateTeamPoints,
+    showNotification,
+    quizColors,
+    activeView,
     questionWindowImageUrl,
     questionWindowOpacity,
     questionWindowSize,
     questionWindowPositionX,
-    questionWindowPositionY,
+    questionWindowPositionY
   } = useGameStore();
-
+  
   const question = questions.find(q => q.id === selectedQuestionId);
   const [showPointsControls, setShowPointsControls] = useState(false);
+  const [isPointsAwarded, setIsPointsAwarded] = useState(false);
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.code === 'Space' && !isPlayerView) {
@@ -44,11 +43,11 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
       
       if (!revealAnswer) {
         handleRevealAnswer();
-      } else if (showPointsControls) {
+      } else if (showPointsControls && !isPointsAwarded) {
         handleAwardPoints();
       }
     }
-  }, [revealAnswer, showPointsControls, isPlayerView]);
+  }, [revealAnswer, showPointsControls, isPlayerView, isPointsAwarded]);
   
   useEffect(() => {
     if (!isPlayerView) {
@@ -60,6 +59,7 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
   useEffect(() => {
     if (revealAnswer) {
       setShowPointsControls(true);
+      setIsPointsAwarded(false);
       
       if (isPlayerView && selectedAnswerIndex === question?.correctAnswerIndex && teams.length > 0 && currentTeamIndex < teams.length) {
         const currentTeam = teams[currentTeamIndex];
@@ -76,6 +76,7 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
       }
     } else {
       setShowPointsControls(false);
+      setIsPointsAwarded(false);
     }
   }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
   
@@ -125,26 +126,33 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
       }
     }
     
-    closeQuestion();
+    setIsPointsAwarded(true);
   };
   
-  const backgroundStyle = questionWindowImageUrl ? {
-    backgroundImage: `url(${questionWindowImageUrl})`,
-    backgroundSize: `${questionWindowSize}%`,
-    backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
-    opacity: questionWindowOpacity
-  } : {};
-
+  const getBackgroundStyle = () => {
+    if (questionWindowImageUrl) {
+      return {
+        backgroundImage: `url(${questionWindowImageUrl})`,
+        backgroundSize: `${questionWindowSize}%`,
+        backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
+        backgroundColor: `rgba(255, 255, 255, ${questionWindowOpacity})`,
+        backgroundBlendMode: 'overlay'
+      };
+    }
+    return { backgroundColor: quizColors.questionWindow || '#FFFFFF' };
+  };
+  
   return (
-    <div className="question-view relative">
-      {questionWindowImageUrl && (
-        <div 
-          className="absolute inset-0 rounded-xl -m-4"
-          style={backgroundStyle}
-        ></div>
-      )}
-      
-      <div className="relative z-10">
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="question-view"
+        className="w-full h-full flex flex-col p-6 rounded-xl neo-shadow"
+        style={getBackgroundStyle()}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
+      >
         <div className="flex justify-between items-start mb-6">
           <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
           {!isPlayerView && (
@@ -200,7 +208,7 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
         {!isPlayerView && (
           <div className="flex justify-end items-center mt-auto">
             <div className="flex gap-4">
-              {showPointsControls && teams.length > 0 && (
+              {showPointsControls && !isPointsAwarded && teams.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -219,8 +227,8 @@ const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = fal
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

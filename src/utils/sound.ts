@@ -16,7 +16,6 @@ const SOUND_EFFECTS = {
 
 // Preload audio files
 export const preloadSounds = () => {
-  console.log('Preloading sound files...');
   Object.entries(SOUND_EFFECTS).forEach(([key, path]) => {
     try {
       const audio = new Audio();
@@ -25,12 +24,13 @@ export const preloadSounds = () => {
       audioCache[key] = audio;
       
       // Test loading by doing a short play and immediate pause
+      audio.volume = 0;
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.then(() => {
           audio.pause();
           audio.currentTime = 0;
-          console.log(`Successfully preloaded sound: ${key}`);
+          audio.volume = 1;
         }).catch(err => {
           console.error(`Error preloading sound ${key}:`, err);
         });
@@ -44,38 +44,21 @@ export const preloadSounds = () => {
 // Play a sound effect
 export const playSound = (sound: keyof typeof SOUND_EFFECTS) => {
   try {
-    console.log(`Attempting to play sound: ${sound}`);
-    
     // Use cached audio if available
     if (audioCache[sound]) {
       // Reset the audio to start from beginning if it's already playing
       audioCache[sound].currentTime = 0;
-      
-      // Try to play the sound
-      const playPromise = audioCache[sound].play();
-      
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log(`Successfully playing sound: ${sound}`);
-        }).catch(err => {
-          console.error(`Error playing sound ${sound}:`, err);
-          
-          // If the initial play fails, try again with a user interaction workaround
-          document.addEventListener('click', function tryPlayOnce() {
-            audioCache[sound].play().catch(e => console.error(`Retry error: ${e}`));
-            document.removeEventListener('click', tryPlayOnce);
-          }, { once: true });
-        });
-      }
-      return;
-    } else {
-      console.warn(`Sound ${sound} not found in cache, loading now`);
-      // Create new audio if not cached
-      const audio = new Audio(SOUND_EFFECTS[sound]);
-      audio.play().catch(err => {
+      audioCache[sound].play().catch(err => {
         console.error(`Error playing sound ${sound}:`, err);
       });
+      return;
     }
+
+    // Create new audio if not cached
+    const audio = new Audio(SOUND_EFFECTS[sound]);
+    audio.play().catch(err => {
+      console.error(`Error playing sound ${sound}:`, err);
+    });
   } catch (error) {
     console.error(`Failed to play sound: ${sound}`, error);
   }
