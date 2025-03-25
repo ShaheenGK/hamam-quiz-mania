@@ -9,7 +9,12 @@ import Logo from '@/components/Logo';
 import { preloadSounds } from '@/utils/sound';
 
 const Host: React.FC = () => {
-  const { activeView, teams } = useGameStore();
+  const { 
+    activeView, 
+    teams, 
+    notificationDisplayTime,
+    setNotificationDisplayTime 
+  } = useGameStore();
 
   useEffect(() => {
     // Initialize the timer and localStorage sync
