@@ -1,23 +1,22 @@
+
 import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore, Question } from '@/store/gameStore';
 import { 
   Plus, X, Save, Edit, Trash, Upload, Download, 
-  RotateCcw, Check, FileText, RefreshCw, Palette, Music, Image, Settings
+  RotateCcw, Check, FileText, RefreshCw, Palette, Music, Image
 } from 'lucide-react';
 import { playSound } from '@/utils/sound';
 import ColorCustomizer from '@/components/ColorCustomizer';
 import SoundCustomizer from '@/components/SoundCustomizer';
 import LogoCustomizer from '@/components/LogoCustomizer';
 import BackgroundImageUploader from '@/components/BackgroundImageUploader';
-import GridBackgroundCustomizer from '@/components/GridBackgroundCustomizer';
-import NotificationSettings from '@/components/NotificationSettings';
 
 const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [activeTab, setActiveTab] = useState<'questions' | 'teams' | 'appearance' | 'sounds' | 'logo' | 'backgrounds' | 'settings'>('questions');
+  const [activeTab, setActiveTab] = useState<'questions' | 'teams' | 'appearance' | 'sounds' | 'logo' | 'backgrounds'>('questions');
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [newQuestion, setNewQuestion] = useState<Partial<Question>>({
     text: '',
@@ -290,17 +289,6 @@ const Admin: React.FC = () => {
             >
               <Image size={16} />
               Backgrounds
-            </button>
-            <button
-              className={`px-4 py-2 font-medium text-sm flex items-center gap-1 ${
-                activeTab === 'settings' 
-                  ? 'text-blue-600 border-b-2 border-blue-600' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings size={16} />
-              Settings
             </button>
             <button
               className={`px-4 py-2 font-medium text-sm flex items-center gap-1 ${
@@ -631,20 +619,6 @@ const Admin: React.FC = () => {
                 type="message" 
                 title="Custom Message Background"
               />
-              
-              {/* Add Grid Background Customizer */}
-              <GridBackgroundCustomizer />
-            </div>
-          )}
-
-          {/* Settings Tab */}
-          {activeTab === 'settings' && (
-            <div>
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Game Settings</h2>
-              <p className="text-gray-600 mb-6">Configure various game settings.</p>
-              
-              {/* Add Notification Settings */}
-              <NotificationSettings />
             </div>
           )}
 
