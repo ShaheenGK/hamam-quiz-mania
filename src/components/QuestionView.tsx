@@ -1,223 +1,240 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import Timer from './Timer';
-import { X, Eye, Award } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { playSound } from '@/utils/sound';
-import { Button } from '@/components/ui/button';
 
-interface QuestionViewProps {
-  isPlayerView?: boolean;
-}
-
-const QuestionView: React.FC<{ isPlayerView?: boolean }> = ({ isPlayerView = false }) => {
-  const { 
-    questions, 
-    selectedQuestionId, 
-    selectedAnswerIndex, 
-    revealAnswer, 
-    teams, 
+const QuestionView: React.FC = () => {
+  const {
+    selectedQuestionId,
+    questions,
+    teams,
     currentTeamIndex,
-    remainingTime,
+    selectedAnswerIndex,
+    revealAnswer,
     isTimerRunning,
+    activeView,
     updateTeamPoints,
+    selectAnswer,
+    showAnswer,
     closeQuestion,
     startTimer,
     stopTimer,
     resetTimer,
     showNotification,
-    selectAnswer,
-    showAnswer,
-    questionWindowImageUrl,
-    questionWindowOpacity,
-    questionWindowSize,
-    questionWindowPositionX,
-    questionWindowPositionY,
+    quizColors
   } = useGameStore();
-
-  const question = questions.find(q => q.id === selectedQuestionId);
-  const [showPointsControls, setShowPointsControls] = useState(false);
   
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.code === 'Space' && !isPlayerView) {
-      event.preventDefault();
-      
-      if (!revealAnswer) {
-        handleRevealAnswer();
-      } else if (showPointsControls) {
-        handleAwardPoints();
-      }
-    }
-  }, [revealAnswer, showPointsControls, isPlayerView]);
+  const [pointsAwarded, setPointsAwarded] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
+  
+  const currentQuestion = selectedQuestionId 
+    ? questions.find(q => q.id === selectedQuestionId) 
+    : null;
+    
+  const currentTeam = teams.length > currentTeamIndex ? teams[currentTeamIndex] : null;
   
   useEffect(() => {
-    if (!isPlayerView) {
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+    // Reset points awarded state when a new question is selected
+    setPointsAwarded(false);
+    
+    // If this is the initial load, don't play the sound
+    if (initialLoad) {
+      setInitialLoad(false);
+      return;
     }
-  }, [handleKeyDown, isPlayerView]);
-  
-  useEffect(() => {
-    if (revealAnswer) {
-      setShowPointsControls(true);
-      
-      if (isPlayerView && selectedAnswerIndex === question?.correctAnswerIndex && teams.length > 0 && currentTeamIndex < teams.length) {
-        const currentTeam = teams[currentTeamIndex];
-        
-        if (!question.usedCustomReward) {
-          updateTeamPoints(currentTeam.id, question.points);
-        } else if (question.customReward) {
-          showNotification(`Prize: ${question.customReward}`, 'success');
-        }
-      } else if (isPlayerView && selectedAnswerIndex !== null && 
-                selectedAnswerIndex !== question?.correctAnswerIndex && 
-                question?.usedCustomReward && question?.customPenalty) {
-        showNotification(`Penalty: ${question.customPenalty}`, 'error');
-      }
-    } else {
-      setShowPointsControls(false);
+    
+    // Play sound when a question is selected
+    if (selectedQuestionId && activeView === 'question') {
+      playSound('cardSelect');
     }
-  }, [revealAnswer, isPlayerView, selectedAnswerIndex, question, teams, currentTeamIndex, updateTeamPoints, showNotification]);
+  }, [selectedQuestionId, activeView, initialLoad]);
   
-  useEffect(() => {
-    if (isPlayerView && activeView === 'grid') {
-      closeQuestion();
-    }
-  }, [isPlayerView, activeView, closeQuestion]);
-  
-  if (!question) return null;
-  
-  const handleAnswerSelect = (index: number) => {
-    if (!revealAnswer) {
-      selectAnswer(index);
-    }
+  const handleAnswerClick = (index: number) => {
+    if (revealAnswer || !isTimerRunning) return;
+    selectAnswer(index);
+    playSound('buttonClick');
   };
   
   const handleRevealAnswer = () => {
     showAnswer();
-    
-    if (selectedAnswerIndex !== null) {
-      if (selectedAnswerIndex === question.correctAnswerIndex) {
-        playSound('correctAnswer');
-      } else {
-        playSound('wrongAnswer');
-      }
-    }
-  };
-  
-  const handleClose = () => {
-    closeQuestion();
     playSound('buttonClick');
   };
   
   const handleAwardPoints = () => {
-    if (teams.length > 0 && currentTeamIndex < teams.length) {
-      const currentTeam = teams[currentTeamIndex];
+    if (!currentQuestion || !currentTeam) return;
+    
+    const isCorrect = selectedAnswerIndex === currentQuestion.correctAnswerIndex;
+    
+    if (currentQuestion.usedCustomReward) {
+      const message = isCorrect 
+        ? `${currentTeam.name} ${currentQuestion.customReward || 'Wins a prize!'}` 
+        : `${currentTeam.name} ${currentQuestion.customPenalty || 'Gets a penalty!'}`;
       
-      if (selectedAnswerIndex === question.correctAnswerIndex) {
-        if (!question.usedCustomReward) {
-          updateTeamPoints(currentTeam.id, question.points);
-        } else if (question.customReward) {
-          showNotification(`Prize: ${question.customReward}`, 'success');
-        }
-      } else if (selectedAnswerIndex !== null && question.usedCustomReward && question.customPenalty) {
-        showNotification(`Penalty: ${question.customPenalty}`, 'error');
-      }
+      showNotification(message, isCorrect ? 'success' : 'error');
+    } else {
+      // Award points based on correctness
+      const pointsChange = isCorrect ? currentQuestion.points : -Math.floor(currentQuestion.points / 2);
+      updateTeamPoints(currentTeam.id, pointsChange);
     }
     
-    closeQuestion();
+    setPointsAwarded(true);
+    playSound(isCorrect ? 'correctAnswer' : 'wrongAnswer');
   };
   
-  const backgroundStyle = questionWindowImageUrl ? {
-    backgroundImage: `url(${questionWindowImageUrl})`,
-    backgroundSize: `${questionWindowSize}%`,
-    backgroundPosition: `${questionWindowPositionX}% ${questionWindowPositionY}%`,
-    opacity: questionWindowOpacity
-  } : {};
-
+  const handleCloseQuestion = () => {
+    closeQuestion();
+    playSound('buttonClick');
+  };
+  
+  const handleTimerControls = () => {
+    if (isTimerRunning) {
+      stopTimer();
+    } else {
+      startTimer();
+    }
+    playSound('buttonClick');
+  };
+  
+  const handleResetTimer = () => {
+    resetTimer();
+    playSound('buttonClick');
+  };
+  
+  if (!currentQuestion) {
+    return (
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold text-gray-800">No question selected</h2>
+      </div>
+    );
+  }
+  
   return (
-    <div className="question-view relative">
-      {questionWindowImageUrl && (
-        <div 
-          className="absolute inset-0 rounded-xl -m-4"
-          style={backgroundStyle}
-        ></div>
-      )}
-      
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">{question.text}</h2>
-          {!isPlayerView && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleClose}
-              className="rounded-full hover:bg-gray-100 transition-colors"
+    <div className="question-view">
+      {/* Question header */}
+      <div className="mb-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full mr-2">
+              Question {selectedQuestionId}
+            </span>
+            <span className="inline-block bg-green-100 text-green-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+              {currentQuestion.points} Points
+            </span>
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={handleTimerControls}
+              className={`px-3 py-1 rounded-md text-sm ${
+                isTimerRunning ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+              }`}
             >
-              <X size={24} className="text-gray-600" />
-            </Button>
-          )}
+              {isTimerRunning ? 'Pause Timer' : 'Resume Timer'}
+            </button>
+            
+            <button
+              onClick={handleResetTimer}
+              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm"
+            >
+              Reset Timer
+            </button>
+            
+            <button
+              onClick={handleCloseQuestion}
+              className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md text-sm"
+            >
+              Back to Grid
+            </button>
+          </div>
         </div>
         
+        {/* Timer */}
         <Timer />
         
-        <div className="answers-grid grid grid-cols-2 gap-4 flex-grow mb-6">
-          {question.answers.map((answer, index) => (
-            <motion.button
-              key={index}
-              onClick={() => handleAnswerSelect(index)}
-              className={`
-                answer-button w-full p-4 flex items-center justify-center
-                rounded-lg text-lg font-medium transition-all
-                ${revealAnswer ? (
-                  index === question.correctAnswerIndex 
-                    ? 'correct-answer bg-green-100 text-green-800' 
-                    : 'incorrect-answer bg-red-100 text-red-800'
-                ) : (
-                  selectedAnswerIndex === index 
-                    ? 'selected-answer bg-gray-100' 
-                    : 'bg-white hover:bg-gray-50'
-                )}
-                ${revealAnswer && 'cursor-default'}
-              `}
-              style={{
-                backgroundColor: revealAnswer 
-                  ? (index === question.correctAnswerIndex ? `${quizColors.correct}20` : `${quizColors.incorrect}20`)
-                  : (selectedAnswerIndex === index ? `${quizColors.selected}20` : '#FFFFFF'),
-                color: revealAnswer
-                  ? (index === question.correctAnswerIndex ? quizColors.correct : quizColors.incorrect)
-                  : (selectedAnswerIndex === index ? quizColors.selected : '#333333')
-              }}
-              whileHover={{ scale: revealAnswer ? 1 : 1.03 }}
-              whileTap={{ scale: revealAnswer ? 1 : 0.98 }}
-              disabled={revealAnswer}
-            >
-              {answer}
-            </motion.button>
-          ))}
-        </div>
-        
-        {!isPlayerView && (
-          <div className="flex justify-end items-center mt-auto">
-            <div className="flex gap-4">
-              {showPointsControls && teams.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Button
-                    onClick={handleAwardPoints}
-                    variant="default"
-                    className="px-6 py-3 bg-green-600 hover:bg-green-700 transition-all transform hover:scale-105 active:scale-95"
-                  >
-                    <Award className="mr-2" size={20} />
-                    Award Points
-                  </Button>
-                </motion.div>
-              )}
+        {/* Current team */}
+        {currentTeam && (
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-medium">
+              Current Team: <span className="text-blue-600">{currentTeam.name}</span>
+            </div>
+            <div className="font-medium">
+              Score: <span className="text-green-600">{currentTeam.points}</span>
             </div>
           </div>
+        )}
+        
+        <h1 className="text-2xl font-bold text-gray-800">{currentQuestion.text}</h1>
+      </div>
+      
+      {/* Answers grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {currentQuestion.answers.map((answer, index) => {
+          const isSelected = selectedAnswerIndex === index;
+          const isCorrect = revealAnswer && index === currentQuestion.correctAnswerIndex;
+          const isIncorrect = revealAnswer && isSelected && !isCorrect;
+          
+          let bgColor = 'bg-white';
+          let borderColor = 'border-gray-200';
+          
+          if (isCorrect) {
+            bgColor = `bg-[${quizColors.correct}]/10`;
+            borderColor = `border-[${quizColors.correct}]`;
+          } else if (isIncorrect) {
+            bgColor = `bg-[${quizColors.incorrect}]/10`;
+            borderColor = `border-[${quizColors.incorrect}]`;
+          } else if (isSelected) {
+            bgColor = `bg-[${quizColors.selected}]/10`;
+            borderColor = `border-[${quizColors.selected}]`;
+          }
+          
+          return (
+            <motion.div
+              key={index}
+              className={`${bgColor} ${borderColor} border-2 rounded-xl p-6 cursor-pointer
+                ${!revealAnswer && isTimerRunning ? 'hover:border-blue-400 hover:bg-blue-50' : ''}`}
+              whileHover={!revealAnswer && isTimerRunning ? { scale: 1.02 } : {}}
+              onClick={() => handleAnswerClick(index)}
+              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-xl font-medium">
+                  {String.fromCharCode(65 + index)}. {answer}
+                </span>
+                {isCorrect && (
+                  <Check className="text-green-600 h-6 w-6" />
+                )}
+                {isIncorrect && (
+                  <X className="text-red-600 h-6 w-6" />
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      
+      {/* Action buttons */}
+      <div className="flex justify-center gap-4">
+        {!revealAnswer && (
+          <button
+            onClick={handleRevealAnswer}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Reveal Answer
+          </button>
+        )}
+        
+        {revealAnswer && !pointsAwarded && currentTeam && (
+          <button
+            onClick={handleAwardPoints}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            Award Points
+          </button>
         )}
       </div>
     </div>

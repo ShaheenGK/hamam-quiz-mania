@@ -1183,7 +1183,7 @@ export const startTimerInterval = () => {
   }
   
   timerInterval = window.setInterval(() => {
-    tickTimer();
+    useGameStore.getState().tickTimer();
   }, 1000) as unknown as number;
 };
 
