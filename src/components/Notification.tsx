@@ -11,7 +11,7 @@ const Notification: React.FC = () => {
     if (notification.visible) {
       const timer = setTimeout(() => {
         hideNotification();
-      }, notificationDisplayTime); // Use the customizable display time
+      }, notificationDisplayTime); // use the configurable display time
       
       return () => clearTimeout(timer);
     }

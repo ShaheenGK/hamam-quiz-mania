@@ -59,6 +59,7 @@ export type GameState = {
     message: string;
     type: 'success' | 'error' | 'info';
   };
+  notificationDisplayTime: number;
   quizColors: QuizColors;
   sounds: Sound[];
   logoUrl: string | null;
@@ -113,6 +114,7 @@ export type GameActions = {
   
   showNotification: (message: string, type: 'success' | 'error' | 'info') => void;
   hideNotification: () => void;
+  setNotificationDisplayTime: (time: number) => void;
   
   markQuestionCompleted: (id: number) => void;
   
@@ -214,6 +216,7 @@ export const useGameStore = create<GameStore>()(
         message: '',
         type: 'info',
       },
+      notificationDisplayTime: 5000,
       quizColors: defaultColors,
       sounds: defaultSounds,
       logoUrl: null,
@@ -238,6 +241,18 @@ export const useGameStore = create<GameStore>()(
       customMessageSize: 100,
       customMessagePositionX: 50,
       customMessagePositionY: 50,
+      
+      setNotificationDisplayTime: (time) => {
+        set({ 
+          notificationDisplayTime: time,
+          lastUpdateTimestamp: Date.now()
+        });
+        
+        syncToLocalStorage({
+          type: 'SET_NOTIFICATION_DISPLAY_TIME',
+          payload: { time }
+        });
+      },
       
       setBackgroundImage: (url) => {
         set({ 
@@ -833,7 +848,7 @@ export const useGameStore = create<GameStore>()(
         
         setTimeout(() => {
           get().hideNotification();
-        }, 5000);
+        }, get().notificationDisplayTime);
         
         syncToLocalStorage({
           type: 'SHOW_NOTIFICATION',
@@ -905,6 +920,7 @@ export const useGameStore = create<GameStore>()(
         logoUrl: state.logoUrl,
         logoText: state.logoText,
         logoSize: state.logoSize,
+        notificationDisplayTime: state.notificationDisplayTime,
         backgroundImageUrl: state.backgroundImageUrl,
         questionWindowImageUrl: state.questionWindowImageUrl,
         customMessageImageUrl: state.customMessageImageUrl,
@@ -1122,6 +1138,12 @@ export const initializeLocalStorageSync = (role: 'admin' | 'host' | 'player') =>
               useGameStore.setState({ customMessagePositionY: action.payload.position });
             }
             break;
+            
+          case 'SET_NOTIFICATION_DISPLAY_TIME':
+            if (action.payload.time !== undefined) {
+              useGameStore.setState({ notificationDisplayTime: action.payload.time });
+            }
+            break;
         }
       }
     } catch (error) {
@@ -1167,4 +1189,3 @@ export const stopTimerInterval = () => {
     timerInterval = null;
   }
 };
-
